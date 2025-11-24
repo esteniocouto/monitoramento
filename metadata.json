@@ -1,0 +1,5 @@
+{
+  "name": "Painel de Controle de Monitoramento",
+  "description": "Um painel de administração para gerenciar cadastros e visualizar relatórios de monitoramento. Inclui login, um menu lateral navegável e seções para diferentes tipos de dados.",
+  "requestFramePermissions": []
+}
