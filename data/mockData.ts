@@ -55,6 +55,7 @@ export interface RumorEventoData extends BaseMonitoramento {
     gravidade?: number;
     vulnerabilidade?: number;
     capacidade_enfrentamento?: number;
+    nivelConfianca?: string; // Novo campo
     tipoVigilancia?: 'Ativa' | 'Passiva' | '';
     // Campos de verificação
     duplaVerificacao?: boolean;
@@ -103,7 +104,7 @@ export const mockData: Monitoramento[] = [
     {
         id: 'RUM-015', idu: '20072024100000', tipo: 'RUM', titulo: 'Suspeita de contaminação em evento gastronômico', status: 'Em Monitoramento', nivelRisco: 'Alto', dataInicio: '2024-07-20', pautadoCMA: true,
         veracidade: 'Suspeito', fundamentoVeracidade: 'Múltiplos relatos em redes sociais e imprensa local.', descricao: 'Relatos de intoxicação alimentar após evento no centro da cidade.', localEvento: 'Urbano', notificadorFonte: 'Imprensa', idPais: 1, idEstado: 1, idCidade: 1, idNatureza: 1,
-        gravidade: 4, vulnerabilidade: 4, capacidade_enfrentamento: 3, tipoVigilancia: 'Passiva',
+        gravidade: 4, vulnerabilidade: 4, capacidade_enfrentamento: 3, nivelConfianca: 'Boa', tipoVigilancia: 'Passiva',
         duplaVerificacao: false,
         usuarioCadastro: 'Ana Silva',
         usuarioVerificacao: 'Carlos Pereira',
@@ -118,7 +119,7 @@ export const mockData: Monitoramento[] = [
     {
         id: 'RUM-021', idu: '10072024090000', tipo: 'RUM', titulo: 'Boato sobre fechamento de hospital regional', status: 'Finalizado', nivelRisco: 'Moderado', dataInicio: '2024-07-10', pautadoCMA: false, dataConclusao: '2024-07-18',
         veracidade: 'Descartado', fundamentoVeracidade: 'Nota oficial da secretaria de saúde desmentiu o boato.', descricao: 'Áudios em grupos de mensagem alegavam o fechamento iminente.', localEvento: 'Hospitalar', notificadorFonte: 'Redes Sociais', idPais: 1, idEstado: 2, idCidade: 4, idNatureza: 3,
-        gravidade: 3, vulnerabilidade: 3, capacidade_enfrentamento: 2, tipoVigilancia: 'Passiva',
+        gravidade: 3, vulnerabilidade: 3, capacidade_enfrentamento: 2, nivelConfianca: 'Satisfatório', tipoVigilancia: 'Passiva',
         duplaVerificacao: true, dataVerificacao: '2024-07-12', observacaoVerificacao: 'Verificado com a diretoria do hospital.',
         usuarioCadastro: 'Roberto Souza',
         usuarioVerificacao: 'Ana Silva',
@@ -127,7 +128,7 @@ export const mockData: Monitoramento[] = [
     {
         id: 'EVT-003', idu: '22072024081500', tipo: 'EVT', titulo: 'Aumento de casos de virose na região metropolitana', status: 'Em Monitoramento', nivelRisco: 'Muito Alto', dataInicio: '2024-07-22', pautadoCMA: true,
         veracidade: 'Confirmado', fundamentoVeracidade: 'Dados epidemiológicos confirmam o aumento.', descricao: 'Aumento de 50% nos atendimentos por virose nas últimas 48h.', localEvento: 'Urbano', notificadorFonte: 'Vigilância Epidemiológica', idPais: 1, idEstado: 1, idCidade: 2, idNatureza: 2,
-        gravidade: 5, vulnerabilidade: 4, capacidade_enfrentamento: 4, tipoVigilancia: 'Ativa',
+        gravidade: 5, vulnerabilidade: 4, capacidade_enfrentamento: 4, nivelConfianca: 'Boa', tipoVigilancia: 'Ativa',
         duplaVerificacao: false,
         usuarioCadastro: 'Mariana Costa',
         usuarioVerificacao: 'Carlos Pereira',
@@ -136,7 +137,7 @@ export const mockData: Monitoramento[] = [
     {
         id: 'RUM-022', idu: '01072024110000', tipo: 'RUM', titulo: 'Alerta de produto impróprio para consumo', status: 'Finalizado', nivelRisco: 'Muito Baixo', dataInicio: '2024-07-01', pautadoCMA: false, dataConclusao: '2024-07-05',
         veracidade: 'Confirmado', fundamentoVeracidade: 'Análise laboratorial confirmou a contaminação.', descricao: 'Consumidor relatou odor estranho em lote de iogurte.', localEvento: 'Urbano', notificadorFonte: 'Consumidor', idPais: 1, idEstado: 3, idCidade: 7, idNatureza: 1,
-        gravidade: 1, vulnerabilidade: 2, capacidade_enfrentamento: 1, tipoVigilancia: 'Passiva',
+        gravidade: 1, vulnerabilidade: 2, capacidade_enfrentamento: 1, nivelConfianca: 'Boa', tipoVigilancia: 'Passiva',
         duplaVerificacao: true, dataVerificacao: '2024-07-02', observacaoVerificacao: 'Laudo nº 4521/2024.',
         usuarioCadastro: 'Ana Silva',
         usuarioVerificacao: 'Mariana Costa',
@@ -145,7 +146,7 @@ export const mockData: Monitoramento[] = [
     {
         id: 'RUM-018', idu: '28062024162000', tipo: 'RUM', titulo: 'Aumento de casos de doença respiratória', status: 'Em Monitoramento', nivelRisco: 'Moderado', dataInicio: '2024-06-28', pautadoCMA: false,
         veracidade: 'Suspeito', fundamentoVeracidade: 'Aguardando confirmação laboratorial.', descricao: 'Unidades de saúde relatam aumento de atendimentos.', localEvento: 'Urbano', notificadorFonte: 'Vigilância em Saúde', idPais: 1, idEstado: 2, idCidade: 5, idNatureza: 3,
-        gravidade: 3, vulnerabilidade: 4, capacidade_enfrentamento: 3, tipoVigilancia: 'Ativa',
+        gravidade: 3, vulnerabilidade: 4, capacidade_enfrentamento: 3, nivelConfianca: 'Insatisfatório', tipoVigilancia: 'Ativa',
         duplaVerificacao: false,
         usuarioCadastro: 'Roberto Souza',
         usuarioCadastroId: 3, dataCadastro: '2024-06-28T16:20:00'

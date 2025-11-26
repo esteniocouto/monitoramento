@@ -1,6 +1,10 @@
 
 import React, { useState } from 'react';
-import { mockData, Monitoramento, RumorEventoData, NivelRisco, naturezas, icmras, areas } from '../../data/mockData';
+import { 
+    mockData, Monitoramento, RumorEventoData, NivelRisco, 
+    naturezas, icmras, areas,
+    paises, estados, cidades 
+} from '../../data/mockData';
 import { Input } from '../../components/forms/FormControls';
 
 const riskToProbabilityMap: Record<NivelRisco, string> = {
@@ -47,6 +51,27 @@ const ReportContent: React.FC<{ data: Monitoramento }> = ({ data }) => {
         return areas.filter(a => a.naturezaIds && a.naturezaIds.includes(naturezaId));
     };
 
+    const getGeoLocation = (idPais?: number, idEstado?: number, idCidade?: number) => {
+        const pais = paises.find(p => p.id === idPais)?.nome;
+        const estado = estados.find(e => e.id === idEstado)?.nome;
+        const cidade = cidades.find(c => c.id === idCidade)?.nome;
+
+        const parts = [pais, estado, cidade].filter(Boolean);
+        return parts.length > 0 ? parts.join(' / ') : 'Não informada';
+    };
+
+    const calculateImpacto = (g?: number, v?: number, c?: number) => {
+        if(!g || !v || !c) return 'Não avaliado';
+        const val = (g + v + c) / 3;
+        let label = '';
+        if (val <= 1.66) label = 'Insignificante';
+        else if (val <= 2.33) label = 'Baixo';
+        else if (val <= 3.66) label = 'Médio';
+        else if (val <= 4.33) label = 'Alto';
+        else label = 'Crítico';
+        return `${val.toFixed(2)} - ${label}`;
+    };
+
     const relatedAreas = rumorData ? getRelatedAreas(rumorData.idNatureza) : [];
 
     return (
@@ -61,10 +86,22 @@ const ReportContent: React.FC<{ data: Monitoramento }> = ({ data }) => {
             </header>
 
             <section className="mb-6">
-                <h2 className="text-xl font-semibold text-blue-700 border-l-4 border-blue-700 pl-3 mb-3">Objetivo</h2>
-                <p className="text-gray-700">
-                    Avaliar e priorizar riscos de emergências de saúde pública em contextos nacionais, subnacionais ou locais, com base em evidências e participação multissetorial.
-                </p>
+                <h2 className="text-xl font-semibold text-blue-700 border-l-4 border-blue-700 pl-3 mb-3">Dados do monitoramento</h2>
+                <div className="bg-gray-50 p-4 rounded-md border border-gray-200 text-gray-700 text-sm">
+                    <div className="grid grid-cols-1 gap-2 mb-2">
+                        <p><strong className="text-gray-900">Título:</strong> {data.titulo}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <p><strong className="text-gray-900">Status Atual:</strong> {data.status}</p>
+                        <p><strong className="text-gray-900">Data de Recebimento:</strong> {data.dataInicio}</p>
+                        {isRumor && (
+                            <>
+                                <p><strong className="text-gray-900">Cadastrado por:</strong> {rumorData?.usuarioCadastro || 'Não informado'}</p>
+                                <p><strong className="text-gray-900">Verificado por:</strong> {rumorData?.usuarioVerificacao || 'Não verificado'}</p>
+                            </>
+                        )}
+                    </div>
+                </div>
             </section>
             
             <section className="mb-6">
@@ -85,24 +122,14 @@ const ReportContent: React.FC<{ data: Monitoramento }> = ({ data }) => {
                     <div className="p-4 border rounded-md">
                         <strong className="text-gray-800 block mb-2">1. Ameaça e Descrição da Situação:</strong>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 mb-3">
-                             <p className="text-gray-700"><strong>Título:</strong> {data.titulo}</p>
                              <p className="text-gray-700"><strong>Natureza:</strong> {rumorData ? getNaturezaDesc(rumorData.idNatureza) : 'N/A'}</p>
                              <p className="text-gray-700"><strong>ICMRA:</strong> {rumorData ? getIcmraDesc(rumorData.idIcmra) : 'N/A'}</p>
                              <p className="text-gray-700"><strong>Local:</strong> {rumorData?.localEvento || 'N/A'}</p>
+                             <p className="text-gray-700"><strong>Localização Geográfica:</strong> {rumorData ? getGeoLocation(rumorData.idPais, rumorData.idEstado, rumorData.idCidade) : 'N/A'}</p>
                         </div>
                         <div className="bg-gray-50 p-3 rounded border border-gray-100">
                             <p className="text-gray-700 text-sm font-semibold mb-1">Descrição:</p>
                             <p className="text-gray-600">{description}</p>
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <p className="text-gray-700 text-sm"><strong className="text-gray-900">Data de Recebimento:</strong> {data.dataInicio}</p>
-                            {isRumor && (
-                                <>
-                                    <p className="text-gray-700 text-sm"><strong className="text-gray-900">Cadastrado por:</strong> {rumorData?.usuarioCadastro || 'Não informado'}</p>
-                                    <p className="text-gray-700 text-sm"><strong className="text-gray-900">Verificado por:</strong> {rumorData?.usuarioVerificacao || 'Não verificado'}</p>
-                                </>
-                            )}
                         </div>
                     </div>
                      <div className="p-4 border rounded-md">
@@ -114,12 +141,16 @@ const ReportContent: React.FC<{ data: Monitoramento }> = ({ data }) => {
                         <ul className="list-disc list-inside text-gray-700 mt-1">
                             <li><strong>Gravidade:</strong> {rumorData?.gravidade ? gravidadeVulnerabilidadeMap[rumorData.gravidade] : 'Não avaliado'}</li>
                             <li><strong>Vulnerabilidade:</strong> {rumorData?.vulnerabilidade ? gravidadeVulnerabilidadeMap[rumorData.vulnerabilidade] : 'Não avaliado'}</li>
-                            <li><strong>Capacidade de Afrontamento:</strong> {rumorData?.capacidade_enfrentamento ? capacidadeMap[rumorData.capacidade_enfrentamento] : 'Não avaliado'}</li>
+                            <li><strong>Capacidade de Enfrentamento:</strong> {rumorData?.capacidade_enfrentamento ? capacidadeMap[rumorData.capacidade_enfrentamento] : 'Não avaliado'}</li>
+                            <li className="mt-1"><strong>Impacto:</strong> {calculateImpacto(rumorData?.gravidade, rumorData?.vulnerabilidade, rumorData?.capacidade_enfrentamento)}</li>
                         </ul>
                     </div>
                      <div className="p-4 border rounded-md">
                         <strong className="text-gray-800 block">4. Classificação do Risco:</strong>
-                        <p className="text-gray-700 mt-1">{isRumor ? (data as RumorEventoData).nivelRisco : 'Não aplicável'}</p>
+                        <div className="text-gray-700 mt-1 flex flex-col gap-1">
+                            <p><strong>Nível de Risco:</strong> {isRumor ? (data as RumorEventoData).nivelRisco : 'Não aplicável'}</p>
+                            <p><strong>Nível de Confiança:</strong> {rumorData?.nivelConfianca || 'Não informado'}</p>
+                        </div>
                     </div>
                      <div className="p-4 border rounded-md">
                         <strong className="text-gray-800 block">5. Recomendações e Medidas Prioritárias:</strong>

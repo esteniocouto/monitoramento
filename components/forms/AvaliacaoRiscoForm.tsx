@@ -50,7 +50,22 @@ const AvaliacaoRiscoForm: React.FC<AvaliacaoRiscoFormProps> = ({ rumorId, onBack
     return (
         <form className="space-y-6 w-full max-w-4xl" onSubmit={handleSubmit}>
             <h2 className="text-2xl font-bold text-gray-800">Avaliação de Risco</h2>
-            <p className="text-gray-600 mb-6">Vinculado ao Rumor/Evento ID: <span className="font-bold">{rumorId}</span></p>
+            <p className="text-gray-600 mb-2">Vinculado ao Rumor/Evento ID: <span className="font-bold">{rumorId}</span></p>
+
+            {/* Aviso sobre Metodologia STAR */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                    Em caso de dúvida do preenchimento da avaliação de Risco consulte a documentação da metodologia STAR através do link abaixo:
+                </p>
+                <a 
+                    href="https://anvisabr.sharepoint.com/sites/RepositriodeDocumentosdaQualidadedaANVISA/Documentos%20Partilhados/Forms/AllItems.aspx?CT=1764089080223&OR=OWA%2DNT%2DMail&CID=c1d1fce7%2Dbcda%2Ddea4%2D1434%2Dce1faa35a657&ga=1&id=%2Fsites%2FRepositriodeDocumentosdaQualidadedaANVISA%2FDocumentos%20Partilhados%2FVigentes%20Anvisa%2FPOPs%2F0181%20POP%2DF%2DANVISA%2D181%2FFORM%2D965%2E%20POP%2DF%2DANVISA%20181%20V%2E00%20SEI%5F25351%2E813503%5F2024%5F74%2Epdf&viewid=060f8574%2Dae9c%2D468c%2Da107%2Dc148987822ca&parent=%2Fsites%2FRepositriodeDocumentosdaQualidadedaANVISA%2FDocumentos%20Partilhados%2FVigentes%20Anvisa%2FPOPs%2F0181%20POP%2DF%2DANVISA%2D181"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 font-semibold underline text-sm mt-1 inline-block"
+                >
+                    Metodologia Star
+                </a>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <FormField label="Gravidade" id="gravidade"><Select name="gravidade" id="gravidade" onChange={handleChange}><option value="0">Selecione...</option><option value="5">5 - Muito Alto</option><option value="4">4 - Alto</option><option value="3">3 - Moderado</option><option value="2">2 - Baixo</option><option value="1">1 - Muito Baixo</option></Select></FormField>
