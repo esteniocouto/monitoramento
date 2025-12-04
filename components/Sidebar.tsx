@@ -8,7 +8,8 @@ import {
   ClipboardDocumentListIcon,
   ChartBarSquareIcon,
   ShieldCheckIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  TagIcon
 } from './icons/IconComponents';
 
 interface SidebarProps {
@@ -25,6 +26,7 @@ const cadastroItems: MenuItem[] = [
   { key: 'cadastro-areas-localizacao', label: 'Áreas', icon: MapPinIcon },
   { key: 'cadastro-representantes', label: 'Representantes', icon: UsersIcon },
   { key: 'cadastro-icmra', label: 'ICMRA', icon: ShieldCheckIcon },
+  { key: 'cadastro-status', label: 'Status', icon: TagIcon },
   { key: 'cadastro-usuarios', label: 'Usuários', icon: UserCircleIcon, adminOnly: true }, // Restricted
 ];
 

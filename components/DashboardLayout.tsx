@@ -10,6 +10,7 @@ import CadastroAreasLocalizacao from '../pages/cadastro/CadastroAreasLocalizacao
 import CadastroRepresentantes from '../pages/cadastro/CadastroRepresentantes';
 import CadastroIcmra from '../pages/cadastro/CadastroIcmra';
 import CadastroUsuarios from '../pages/cadastro/CadastroUsuarios';
+import CadastroStatus from '../pages/cadastro/CadastroStatus';
 import RelatorioMonitoramento from '../pages/relatorios/RelatorioMonitoramento';
 import RelatorioRepresentantes from '../pages/relatorios/RelatorioRepresentantes';
 import RelatorioMonitoramentosVerificados from '../pages/relatorios/RelatorioMonitoramentosVerificados';
@@ -31,6 +32,7 @@ const pageComponents: Record<PageKey, React.ComponentType<any>> = {
     'cadastro-representantes': CadastroRepresentantes,
     'cadastro-icmra': CadastroIcmra,
     'cadastro-usuarios': CadastroUsuarios,
+    'cadastro-status': CadastroStatus,
     'relatorio-monitoramento': RelatorioMonitoramento,
     'relatorio-representantes': RelatorioRepresentantes,
     'relatorio-monitoramentos-verificados': RelatorioMonitoramentosVerificados,
@@ -46,6 +48,7 @@ const pageTitles: Record<PageKey, string> = {
     'cadastro-representantes': 'Cadastro de Representantes',
     'cadastro-icmra': 'Cadastro ICMRA',
     'cadastro-usuarios': 'Cadastro de Usuários',
+    'cadastro-status': 'Cadastro de Status',
     'relatorio-monitoramento': 'Relatório de Monitoramento',
     'relatorio-representantes': 'Relatório de Representantes',
     'relatorio-monitoramentos-verificados': 'Relatório de Monitoramentos Verificados',
@@ -83,7 +86,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout, userRole, u
       return <RelatorioCMA onEdit={(id) => handleNavigate('cadastro-monitoramento', id)} />;
     }
     if (activePage === 'cadastro-monitoramento') {
-      return <CadastroMonitoramento editingId={editingId} onCancelEdit={() => handleNavigate('relatorio-monitoramento')} />;
+      return (
+        <CadastroMonitoramento 
+            editingId={editingId} 
+            onCancelEdit={() => handleNavigate('relatorio-monitoramento')} 
+            onNavigate={handleNavigate}
+        />
+      );
+    }
+    if (activePage === 'relatorio-risco-detalhado') {
+        return <RelatorioRiscoDetalhado preSelectedId={editingId} />;
     }
     if(Component) {
         return <Component />;

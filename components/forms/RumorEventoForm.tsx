@@ -1,7 +1,9 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { RumorEventoData, naturezas, paises, estados, cidades, icmras } from '../../data/mockData';
+import { RumorEventoData, naturezas, paises, estados, cidades, icmras, areas, statusList } from '../../data/mockData';
 import { Input, Textarea, Select, FormField } from './FormControls';
+import { XMarkIcon } from '../icons/IconComponents';
 
 interface FormProps {
     onBack: () => void;
@@ -27,14 +29,21 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
     const [formData, setFormData] = useState({
         titulo: '', dataRecebimento: '', veracidade: '', fundamentoVeracidade: '', localEvento: '',
         notificadorFonte: '', idNatureza: '', descricao: '', idPais: '', idEstado: '', idCidade: '', tipoVigilancia: '',
-        status: 'Em Monitoramento', idIcmra: ''
+        status: 'Em Monitoramento', idIcmra: '', tipoEncaminhamento: ''
     });
     
+    // TAGS Management
+    const [tags, setTags] = useState<string[]>([]);
+    const [tagInput, setTagInput] = useState('');
+
     const [verification, setVerification] = useState({
         duplaVerificacao: false,
         observacaoVerificacao: '',
         dataVerificacao: ''
     });
+
+    // Estado para as áreas selecionadas na verificação
+    const [selectedVerificationAreas, setSelectedVerificationAreas] = useState<number[]>([]);
 
     const [updates, setUpdates] = useState<any[]>([]);
     const [newUpdateDate, setNewUpdateDate] = useState('');
@@ -57,8 +66,14 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                 idCidade: String(initialData.idCidade),
                 tipoVigilancia: initialData.tipoVigilancia || '',
                 status: initialData.status || 'Em Monitoramento',
-                idIcmra: initialData.idIcmra ? String(initialData.idIcmra) : ''
+                idIcmra: initialData.idIcmra ? String(initialData.idIcmra) : '',
+                tipoEncaminhamento: initialData.tipoEncaminhamento || ''
             });
+            
+            // Load Tags
+            if (initialData.tags) {
+                setTags(initialData.tags);
+            }
 
             // Trigger cascade load
             if(initialData.idPais) {
@@ -69,6 +84,23 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
             }
         }
     }, [initialData]);
+
+    // Efeito para sugerir áreas baseadas na Natureza selecionada
+    useEffect(() => {
+        const natureId = Number(formData.idNatureza);
+        if (natureId) {
+            // Encontra áreas que possuem essa natureza vinculada
+            const relatedAreas = areas
+                .filter(a => a.naturezaIds && a.naturezaIds.includes(natureId))
+                .map(a => a.id);
+            
+            // Atualiza a seleção mantendo o que o usuário já selecionou, mas garantindo que as relacionadas estejam lá
+            setSelectedVerificationAreas(prev => {
+                const combined = new Set([...prev, ...relatedAreas]);
+                return Array.from(combined);
+            });
+        }
+    }, [formData.idNatureza]);
 
     const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const countryId = e.target.value;
@@ -100,6 +132,22 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         setFormData(prev => ({ ...prev, [id]: value }));
     };
     
+    // TAGS Logic
+    const handleAddTag = (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.type === 'keydown' && (e as React.KeyboardEvent).key !== 'Enter') return;
+        
+        e.preventDefault();
+        const newTag = tagInput.trim();
+        if (newTag && !tags.includes(newTag)) {
+            setTags([...tags, newTag]);
+            setTagInput('');
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove: string) => {
+        setTags(tags.filter(tag => tag !== tagToRemove));
+    };
+
     const handleVerificationChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
         if (type === 'checkbox') {
@@ -114,6 +162,14 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
             setVerification(prev => ({ ...prev, [id]: value }));
         }
     }
+
+    const toggleVerificationArea = (areaId: number) => {
+        setSelectedVerificationAreas(prev => 
+            prev.includes(areaId) 
+                ? prev.filter(id => id !== areaId) 
+                : [...prev, areaId]
+        );
+    };
 
     const handleAddUpdate = () => {
         if (newUpdateDate && newUpdateDescription) {
@@ -130,7 +186,8 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
     };
 
     const handleSaveVerificationOnly = () => {
-        alert('Dados de verificação salvos com sucesso! (Simulação)');
+        const areasNames = areas.filter(a => selectedVerificationAreas.includes(a.id)).map(a => a.sigla).join(', ');
+        alert(`Dados de verificação salvos!\nÁreas envolvidas: ${areasNames || 'Nenhuma'}`);
     };
 
     const handleSaveUpdatesOnly = () => {
@@ -145,6 +202,7 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         setTimeout(() => {
             setSaving(false);
             const fakeId = editingId ? Number(editingId) : Date.now();
+            console.log('Saved with tags:', tags);
             alert('Rumor/Evento salvo com sucesso! (Simulação de Banco de Dados)');
             onSave(fakeId);
         }, 1000);
@@ -160,8 +218,16 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                 <FormField label="Tipo de Monitoramento" id="tipo-monitoramento"><Input type="text" id="tipo-monitoramento" value="Rumor/Evento" disabled /></FormField>
                 <FormField label="Status" id="status">
                     <Select id="status" value={formData.status} onChange={handleChange}>
-                        <option value="Em Monitoramento">Em Monitoramento</option>
-                        <option value="Finalizado">Finalizado</option>
+                        {statusList.map(status => (
+                            <option key={status.id} value={status.nome}>{status.nome}</option>
+                        ))}
+                    </Select>
+                </FormField>
+                <FormField label="Tipo de Encaminhamento" id="tipoEncaminhamento">
+                    <Select id="tipoEncaminhamento" value={formData.tipoEncaminhamento} onChange={handleChange}>
+                        <option value="">Selecione...</option>
+                        <option value="Para Conhecimento">Para Conhecimento</option>
+                        <option value="Para Providência">Para Providência</option>
                     </Select>
                 </FormField>
                 <FormField label="Tipo de Vigilância" id="tipoVigilancia">
@@ -223,6 +289,45 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                     </Select>
                 </FormField>
             </div>
+            
+            {/* TAGS Field */}
+            <div className="w-full">
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags (Palavras-chave)</label>
+                <div className="flex gap-2 mb-2">
+                    <Input 
+                        type="text" 
+                        id="tags" 
+                        value={tagInput} 
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={handleAddTag} 
+                        placeholder="Digite uma tag e pressione Enter" 
+                        className="flex-grow"
+                    />
+                    <button 
+                        type="button" 
+                        onClick={handleAddTag}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Adicionar
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {tags.map((tag, index) => (
+                        <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {tag}
+                            <button 
+                                type="button" 
+                                onClick={() => handleRemoveTag(tag)}
+                                className="ml-2 inline-flex items-center justify-center p-0.5 rounded-full text-blue-600 hover:bg-blue-200 hover:text-blue-900 focus:outline-none"
+                            >
+                                <XMarkIcon className="h-4 w-4" />
+                            </button>
+                        </span>
+                    ))}
+                    {tags.length === 0 && <span className="text-gray-400 text-sm italic">Nenhuma tag adicionada.</span>}
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField label="Descrição" id="descricao"><Textarea id="descricao" placeholder="Detalhes sobre o rumor/evento..." value={formData.descricao} onChange={handleChange} maxLength={500} /></FormField>
                 <FormField label="Fundamento da Veracidade" id="fundamentoVeracidade"><Textarea id="fundamentoVeracidade" placeholder="Justificativa para a veracidade..." value={formData.fundamentoVeracidade} onChange={handleChange} maxLength={255} /></FormField>
@@ -309,6 +414,34 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                                             maxLength={500}
                                         />
                                     </FormField>
+                                </div>
+                            </div>
+
+                            {/* Seleção de Áreas para Verificação */}
+                            <div className="mt-4 pt-4 border-t border-indigo-200">
+                                <label className="block text-sm font-bold text-indigo-900 mb-3">Áreas Envolvidas na Verificação</label>
+                                <p className="text-xs text-indigo-700 mb-3">
+                                    Áreas marcadas com * são sugeridas automaticamente com base na natureza do evento. Você pode adicionar ou remover áreas conforme necessário.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 bg-white p-4 rounded-md border border-indigo-100 max-h-48 overflow-y-auto">
+                                    {areas.map((area) => {
+                                        const isRelated = area.naturezaIds && area.naturezaIds.includes(Number(formData.idNatureza));
+                                        return (
+                                            <label key={area.id} className={`flex items-center space-x-2 cursor-pointer p-2 rounded border transition-colors ${selectedVerificationAreas.includes(area.id) ? 'bg-indigo-100 border-indigo-300' : 'hover:bg-gray-50 border-transparent'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedVerificationAreas.includes(area.id)}
+                                                    onChange={() => toggleVerificationArea(area.id)}
+                                                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 border-gray-300"
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm text-gray-800 font-medium">{area.sigla}</span>
+                                                    <span className="text-xs text-gray-500">{area.nome} {isRelated && <span className="text-indigo-600 font-bold">*</span>}</span>
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
+                                    {areas.length === 0 && <span className="text-sm text-gray-500">Nenhuma área cadastrada.</span>}
                                 </div>
                             </div>
                         </div>

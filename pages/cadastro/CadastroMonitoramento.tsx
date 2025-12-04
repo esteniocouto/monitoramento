@@ -1,15 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { mockData, Monitoramento, ComunicacaoRiscoData, RumorEventoData } from '../../data/mockData';
 import ComunicacaoRiscoForm from '../../components/forms/ComunicacaoRiscoForm';
 import RumorEventoForm from '../../components/forms/RumorEventoForm';
 import AvaliacaoRiscoForm from '../../components/forms/AvaliacaoRiscoForm';
+import { PageKey } from '../../types';
 
 // --- Main Component with View Logic ---
 interface CadastroMonitoramentoProps {
     editingId?: string | number | null;
     onCancelEdit: () => void;
+    onNavigate?: (page: PageKey, id?: string | number) => void;
 }
-const CadastroMonitoramento: React.FC<CadastroMonitoramentoProps> = ({ editingId, onCancelEdit }) => {
+const CadastroMonitoramento: React.FC<CadastroMonitoramentoProps> = ({ editingId, onCancelEdit, onNavigate }) => {
     const [view, setView] = useState<'selection' | 'comunicacao_risco' | 'rumor_evento' | 'avaliacao_risco'>('selection');
     const [currentRumorId, setCurrentRumorId] = useState<number | null>(null);
     const [editingData, setEditingData] = useState<Monitoramento | null>(null);
@@ -50,6 +53,13 @@ const CadastroMonitoramento: React.FC<CadastroMonitoramentoProps> = ({ editingId
 
     const handleSaveAndExit = () => {
         alert("Salvo com sucesso!");
+        
+        // Se a função de navegação existir, redireciona para o relatório detalhado
+        if (onNavigate && currentRumorId) {
+            onNavigate('relatorio-risco-detalhado', currentRumorId);
+            return;
+        }
+
         if (editingId) {
             onCancelEdit();
         } else {

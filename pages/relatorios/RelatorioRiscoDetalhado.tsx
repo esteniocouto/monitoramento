@@ -1,11 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     mockData, Monitoramento, RumorEventoData, NivelRisco, 
     naturezas, icmras, areas,
     paises, estados, cidades 
 } from '../../data/mockData';
 import { Input } from '../../components/forms/FormControls';
+
+interface RelatorioRiscoDetalhadoProps {
+    preSelectedId?: string | number | null;
+}
 
 const riskToProbabilityMap: Record<NivelRisco, string> = {
     'Muito Baixo': 'Muito Improvável',
@@ -182,28 +186,43 @@ const ReportContent: React.FC<{ data: Monitoramento }> = ({ data }) => {
     );
 };
 
-const RelatorioRiscoDetalhado: React.FC = () => {
+const RelatorioRiscoDetalhado: React.FC<RelatorioRiscoDetalhadoProps> = ({ preSelectedId }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [reportData, setReportData] = useState<Monitoramento | null>(null);
     const [error, setError] = useState('');
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        const term = searchTerm.trim().toLowerCase();
-        if (!term) return;
+    // Auto-search effect if ID is provided via props
+    useEffect(() => {
+        if (preSelectedId) {
+            const idStr = String(preSelectedId);
+            setSearchTerm(idStr);
+            performSearch(idStr);
+        }
+    }, [preSelectedId]);
+
+    const performSearch = (term: string) => {
+        const cleanTerm = term.trim().toLowerCase();
+        if (!cleanTerm) return;
 
         const foundData = mockData.find(item => 
-            item.id.toLowerCase() === term || 
-            (item.idu && item.idu.includes(term))
+            item.id.toLowerCase() === cleanTerm || 
+            (item.idu && item.idu.includes(cleanTerm)) ||
+            String(item.id) === cleanTerm // Case where ID is a number/timestamp from creation
         );
 
         if (foundData) {
             setReportData(foundData);
+            setError('');
         } else {
             setError('Nenhum monitoramento encontrado com o ID ou IDU fornecido.');
             setReportData(null);
         }
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        performSearch(searchTerm);
     };
     
     const handlePrint = () => {

@@ -1,17 +1,11 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { PencilIcon } from '../../components/icons/IconComponents';
-import { mockData, Monitoramento, Status, NivelRisco, RumorEventoData } from '../../data/mockData';
+import { mockData, Monitoramento, Status, NivelRisco, RumorEventoData, statusList } from '../../data/mockData';
 
 interface RelatorioMonitoramentoProps {
     onEdit: (id: string) => void;
 }
-
-const statusStyles: Record<string, string> = {
-    'Em Monitoramento': 'bg-yellow-100 text-yellow-800',
-    'Finalizado': 'bg-green-100 text-green-800',
-};
 
 const riscoStyles: Record<string, string> = {
     'Muito Baixo': 'bg-green-700 text-white',
@@ -46,8 +40,18 @@ const RelatorioMonitoramento: React.FC<RelatorioMonitoramentoProps> = ({ onEdit 
         });
     }, [searchTerm, statusFilter, riskFilter, data]);
 
-    const statusOptions: (Status | 'todos')[] = ['todos', 'Em Monitoramento', 'Finalizado'];
+    const statusOptions: (Status | 'todos')[] = ['todos', ...statusList.map(s => s.nome)];
     const riskOptions: (NivelRisco | 'todos')[] = ['todos', 'Muito Baixo', 'Baixo', 'Moderado', 'Alto', 'Muito Alto'];
+
+    // Helper to get status color from dynamic list
+    const getStatusStyle = (statusName: string) => {
+        const statusItem = statusList.find(s => s.nome === statusName);
+        if (statusItem) {
+            // Check if color is hex or tailwind class. If hex, return inline style object.
+            return { backgroundColor: statusItem.cor, color: '#fff' }; // Defaulting text to white for contrast on custom colors
+        }
+        return { backgroundColor: '#F3F4F6', color: '#374151' }; // gray-100 / gray-700
+    };
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -109,14 +113,19 @@ const RelatorioMonitoramento: React.FC<RelatorioMonitoramentoProps> = ({ onEdit 
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredData.map((item) => {
                              const itemRisk = (item as RumorEventoData).nivelRisco;
+                             const statusStyle = getStatusStyle(item.status);
+
                              return (
                                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{item.idu}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate" title={item.titulo}>{item.titulo}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.dataInicio}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[item.status] || 'bg-gray-100'}`}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span 
+                                            className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm"
+                                            style={statusStyle}
+                                        >
                                             {item.status}
                                         </span>
                                     </td>

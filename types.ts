@@ -9,6 +9,7 @@ export type PageKey =
   'cadastro-representantes' |
   'cadastro-icmra' |
   'cadastro-usuarios' |
+  'cadastro-status' |
   'relatorio-monitoramento' |
   'relatorio-representantes' |
   'relatorio-monitoramentos-verificados' |

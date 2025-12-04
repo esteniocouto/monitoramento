@@ -1,3 +1,4 @@
+
 # Especificação Técnica do Sistema: Painel de Controle de Monitoramento e Avaliação de Risco
 
 | Metadado | Detalhe |
@@ -45,9 +46,9 @@ O sistema utiliza uma arquitetura **Cliente-Servidor** desacoplada (RESTful API)
     *   **Modelagem:** Relacional (Normalização até 3FN).
 
 ### 2.2. Mecanismo de Resiliência (Fallback)
-O sistema possui uma arquitetura híbrida. O frontend detecta automaticamente falhas na conexão com a API.
+O sistema possui uma arquitetura híbrida inteligente. O frontend detecta automaticamente falhas na conexão com a API.
 *   **Modo Online:** Consome dados em tempo real do SQL Server.
-*   **Modo Demonstração/Offline:** Em caso de falha de rede ou configuração (`ESOCKET`), o sistema utiliza dados locais (`mockData`) para permitir a visualização e testes de interface sem interrupção.
+*   **Modo Demonstração/Offline:** Em caso de falha de rede ou configuração (`ESOCKET`), o sistema utiliza dados locais (`mockData`) para permitir a visualização e testes de interface sem interrupção operacional.
 
 ## 3. Funcionalidades Detalhadas
 
@@ -57,26 +58,27 @@ O sistema possui uma arquitetura híbrida. O frontend detecta automaticamente fa
 
 ### 3.2. Módulo: Monitoramento de Rumor e Evento
 *   **Entrada de Dados:** Título, descrição, geolocalização (País/Estado/Cidade), fonte notificadora e natureza.
-*   **IDU (Identificador Único):** Geração automática de identificador temporal (`DDMMYYYYHHmmss`).
+*   **IDU (Identificador Único):** Geração automática de identificador temporal (`DDMMYYYYHHmmss`) para rastreamento preciso.
 *   **Timeline:** Registro cronológico de atualizações do evento.
 *   **Verificação de Dados (Dupla Checagem):**
     *   Funcionalidade exclusiva do modo de edição.
     *   Permite validar a veracidade dos dados com registro de data e observação auditável.
+    *   Sugestão automática de Áreas Relacionadas com base na Natureza do evento.
 
 ### 3.3. Módulo: Matriz de Risco Automatizada
 *   **Cálculo STAR:**
-    1.  `Impacto` = Média (Gravidade, Vulnerabilidade, Capacidade).
+    1.  `Impacto` = Média (Gravidade, Vulnerabilidade, Capacidade de Enfrentamento).
     2.  `Risco` = Impacto + Probabilidade.
 *   **Classificação:** Conversão automática para escala qualitativa (Muito Baixo a Muito Alto).
 *   **Gatilho CMA:** Indicação automática ou manual para pauta em comitê.
 
 ### 3.4. Módulo: Comunicação de Risco
-*   Registro de dados fiscais e regulatórios (CNPJ, Produto, Lote, Resolução).
+*   Registro de dados fiscais e regulatórios (CNPJ, Produto, Lote, Resolução, Ação Adotada).
 
 ### 3.5. Relatórios Gerenciais
-*   **Geral:** Listagem com filtros dinâmicos e status visual.
+*   **Geral:** Listagem completa com filtros dinâmicos (ID, IDU, Título) e status visual.
 *   **Verificados:** Auditoria de eventos que passaram pela dupla checagem.
-*   **Risco Detalhado:** Ficha técnica completa para impressão, contendo análise de ameaça, áreas relacionadas (baseado na natureza) e recomendações.
+*   **Risco Detalhado:** Ficha técnica completa para impressão, contendo análise de ameaça, áreas relacionadas (baseado na natureza), geolocalização detalhada e recomendações.
 
 ## 4. Modelo de Dados (Principais Tabelas)
 
@@ -85,18 +87,19 @@ O sistema possui uma arquitetura híbrida. O frontend detecta automaticamente fa
 *   `RISCO`: Cálculos da matriz.
 *   `VERIFICACAO`: Status de qualidade e validação.
 *   `ATUALIZACAO`: Histórico de evolução.
-*   `AREA` / `NATUREZA`: Tabelas de domínio (Muitos-para-Muitos).
+*   `AREA` / `NATUREZA` / `ICMRA`: Tabelas de domínio.
 
 ## 5. Procedimentos de Instalação
 
 ### Backend
 1.  Acesse `/backend`.
 2.  `npm install`
-3.  Configure `.env` com credenciais do SQL Server.
-4.  `npm run dev`
+3.  Configure o arquivo `.env` com credenciais do SQL Server.
+4.  Certifique-se que o TCP/IP está habilitado na porta 1433 do SQL Server.
+5.  `npm run dev`
 
 ### Frontend
-1.  Raiz do projeto.
+1.  Acesse a raiz do projeto.
 2.  `npm install`
 3.  `npm run dev`
 4.  Acesse `http://localhost:5173`.
