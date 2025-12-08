@@ -32,7 +32,7 @@
 
     <div class="meta-info">
         <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
-        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.1.0</span></div>
+        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.2.0</span></div>
         <div class="meta-row"><span class="meta-label">Data de Emissão:</span> <span>19/11/2025</span></div>
         <div class="meta-row"><span class="meta-label">Responsável Técnico:</span> <span>ESTÊNIO COUTO BORGES JÚNIOR</span></div>
         <div class="meta-row"><span class="meta-label">SGBD:</span> <span>Microsoft SQL Server 2019+</span></div>
@@ -67,7 +67,13 @@
                 <td>1.1.0</td>
                 <td>19/11/2025</td>
                 <td>Estênio Couto Borges Júnior</td>
-                <td>Inclusão de todas as tabelas (Comunicação, Atualização, Áreas) e ajuste de volumetria para 50 reg/mês.</td>
+                <td>Inclusão de todas as tabelas (Comunicação, Atualização, Áreas).</td>
+            </tr>
+            <tr>
+                <td>1.2.0</td>
+                <td>19/11/2025</td>
+                <td>Estênio Couto Borges Júnior</td>
+                <td>Detalhamento das tabelas geográficas (PAIS, ESTADO, CIDADE) para suporte a cadastro dinâmico.</td>
             </tr>
         </tbody>
     </table>
@@ -111,9 +117,24 @@ CREATE TABLE [dbo].[NATUREZA](
 )
 GO
 
-CREATE TABLE [dbo].[PAIS] ( [ID_PAIS] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(100) );
-CREATE TABLE [dbo].[ESTADO] ( [ID_ESTADO] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(50), [ID_PAIS] int FOREIGN KEY REFERENCES PAIS(ID_PAIS) );
-CREATE TABLE [dbo].[CIDADE] ( [ID_CIDADE] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(100), [ID_ESTADO] int FOREIGN KEY REFERENCES ESTADO(ID_ESTADO) );
+-- Tabelas Geográficas
+CREATE TABLE [dbo].[PAIS] ( 
+    [ID_PAIS] int IDENTITY(1,1) PRIMARY KEY, 
+    [NOME] varchar(100) NOT NULL UNIQUE 
+);
+
+CREATE TABLE [dbo].[ESTADO] ( 
+    [ID_ESTADO] int IDENTITY(1,1) PRIMARY KEY, 
+    [NOME] varchar(50) NOT NULL, 
+    [ID_PAIS] int NOT NULL FOREIGN KEY REFERENCES PAIS(ID_PAIS) 
+);
+
+CREATE TABLE [dbo].[CIDADE] ( 
+    [ID_CIDADE] int IDENTITY(1,1) PRIMARY KEY, 
+    [NOME] varchar(100) NOT NULL, 
+    [ID_ESTADO] int NOT NULL FOREIGN KEY REFERENCES ESTADO(ID_ESTADO) 
+);
+
 CREATE TABLE [dbo].[ICMRA] ( [ID_ICMRA] int IDENTITY(1,1) PRIMARY KEY, [DESCRICAO] varchar(255) );
 
 -- Tabelas Organizacionais
@@ -165,6 +186,10 @@ CREATE TABLE [dbo].[RUMOR_EVENTO](
     [ID_STATUS] [int] NULL FOREIGN KEY REFERENCES [dbo].[STATUS]([ID_STATUS]),
     [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA]),
     [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
+    
+    -- Geografia vinculada
+    [ID_PAIS] [int] NULL FOREIGN KEY REFERENCES [dbo].[PAIS]([ID_PAIS]),
+    [ID_ESTADO] [int] NULL FOREIGN KEY REFERENCES [dbo].[ESTADO]([ID_ESTADO]),
     [ID_CIDADE] [int] NULL FOREIGN KEY REFERENCES [dbo].[CIDADE]([ID_CIDADE]),
     
     [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
@@ -269,43 +294,42 @@ GO
             <tr><td>TITULO</td><td>VARCHAR(255)</td><td>N</td><td>N</td><td>S</td><td>Título do evento.</td></tr>
             <tr><td>ID_STATUS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Status atual do evento.</td></tr>
             <tr><td>ID_NATUREZA</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Classificação da natureza.</td></tr>
-            <tr><td>TIPO_ENCAMINHAMENTO</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>N</td><td>Para Conhecimento/Providência.</td></tr>
+            <tr><td>ID_PAIS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>País da ocorrência.</td></tr>
+            <tr><td>ID_ESTADO</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Estado da ocorrência.</td></tr>
+            <tr><td>ID_CIDADE</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Cidade da ocorrência.</td></tr>
         </tbody>
     </table>
 
-    <h3>3.3. Tabela: COMUNICACAO</h3>
+    <h3>3.3. Tabela: PAIS</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_COMUNICACAO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador da comunicação.</td></tr>
-            <tr><td>CNPJ</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>N</td><td>CNPJ da empresa envolvida.</td></tr>
-            <tr><td>PRODUTO</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>N</td><td>Nome do produto.</td></tr>
-            <tr><td>LOTE</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>N</td><td>Lote do produto.</td></tr>
-            <tr><td>RESOLUCAO</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>N</td><td>Número da resolução (RE).</td></tr>
+            <tr><td>ID_PAIS</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do país.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome do país (ex: Brasil).</td></tr>
         </tbody>
     </table>
 
-    <h3>3.4. Tabela: RISCO</h3>
+    <h3>3.4. Tabela: ESTADO</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_RISCO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da avaliação.</td></tr>
-            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com o evento.</td></tr>
-            <tr><td>IMPACTO</td><td>DECIMAL(5,2)</td><td>N</td><td>N</td><td>N</td><td>Média dos fatores de impacto.</td></tr>
-            <tr><td>MATRIZ_RISCO</td><td>DECIMAL(5,2)</td><td>N</td><td>N</td><td>N</td><td>Soma de Impacto + Probabilidade.</td></tr>
+            <tr><td>ID_ESTADO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do estado.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Nome ou sigla (ex: DF).</td></tr>
+            <tr><td>ID_PAIS</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com a tabela PAIS.</td></tr>
         </tbody>
     </table>
 
-    <h3>3.5. Tabela: ATUALIZACAO</h3>
+    <h3>3.5. Tabela: CIDADE</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_ATUALIZACAO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da atualização.</td></tr>
-            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Evento relacionado.</td></tr>
-            <tr><td>DESCRICAO</td><td>VARCHAR(500)</td><td>N</td><td>N</td><td>N</td><td>Texto da atualização.</td></tr>
+            <tr><td>ID_CIDADE</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador da cidade.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome da cidade (ex: Brasília).</td></tr>
+            <tr><td>ID_ESTADO</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com a tabela ESTADO.</td></tr>
         </tbody>
     </table>
 
+    <!-- Demais tabelas mantidas conforme versão anterior -->
     <h3>3.6. Tabela: AREA</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>

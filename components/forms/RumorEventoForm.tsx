@@ -1,8 +1,7 @@
 
-
 import React, { useState, useEffect } from 'react';
-import { RumorEventoData, naturezas, paises, estados, cidades, icmras, areas, statusList } from '../../data/mockData';
-import { Input, Textarea, Select, FormField } from './FormControls';
+import { RumorEventoData, naturezas, paises as mockPaises, estados as mockEstados, cidades as mockCidades, icmras, areas, statusList } from '../../data/mockData';
+import { Input, Textarea, Select, FormField, CreatableSelect } from './FormControls';
 import { XMarkIcon } from '../icons/IconComponents';
 
 interface FormProps {
@@ -17,12 +16,18 @@ interface RumorEventoFormProps extends FormProps {
 
 const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editingId, initialData }) => {
     
-    // Using Mock Data directly
+    // Using Mock Data directly but coping to state to allow additions
     const naturezasList = naturezas;
     const icmrasList = icmras;
-    const paisesList = paises;
-    const [estadosList, setEstadosList] = useState<{id: number, nome: string}[]>([]);
-    const [cidadesList, setCidadesList] = useState<{id: number, nome: string}[]>([]);
+    
+    // Listas locais de geografia (para permitir adicionar novos)
+    const [paisesList, setPaisesList] = useState<{id: number, nome: string}[]>(mockPaises);
+    const [allEstadosList, setAllEstadosList] = useState<{id: number, nome: string, idPais: number}[]>(mockEstados);
+    const [allCidadesList, setAllCidadesList] = useState<{id: number, nome: string, idEstado: number}[]>(mockCidades);
+
+    // Listas filtradas para exibição
+    const [filteredEstados, setFilteredEstados] = useState<{id: number, nome: string}[]>([]);
+    const [filteredCidades, setFilteredCidades] = useState<{id: number, nome: string}[]>([]);
     
     const [saving, setSaving] = useState(false);
 
@@ -70,31 +75,40 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                 tipoEncaminhamento: initialData.tipoEncaminhamento || ''
             });
             
-            // Load Tags
             if (initialData.tags) {
                 setTags(initialData.tags);
             }
-
-            // Trigger cascade load
-            if(initialData.idPais) {
-                setEstadosList(estados.filter(e => e.idPais === initialData.idPais));
-            }
-            if(initialData.idEstado) {
-                setCidadesList(cidades.filter(c => c.idEstado === initialData.idEstado));
-            }
         }
     }, [initialData]);
+
+    // Filtragem em Cascata (Efeito)
+    useEffect(() => {
+        if (formData.idPais) {
+            const estadosDoPais = allEstadosList.filter(e => e.idPais === Number(formData.idPais));
+            setFilteredEstados(estadosDoPais);
+        } else {
+            setFilteredEstados([]);
+        }
+    }, [formData.idPais, allEstadosList]);
+
+    useEffect(() => {
+        if (formData.idEstado) {
+            const cidadesDoEstado = allCidadesList.filter(c => c.idEstado === Number(formData.idEstado));
+            setFilteredCidades(cidadesDoEstado);
+        } else {
+            setFilteredCidades([]);
+        }
+    }, [formData.idEstado, allCidadesList]);
+
 
     // Efeito para sugerir áreas baseadas na Natureza selecionada
     useEffect(() => {
         const natureId = Number(formData.idNatureza);
         if (natureId) {
-            // Encontra áreas que possuem essa natureza vinculada
             const relatedAreas = areas
                 .filter(a => a.naturezaIds && a.naturezaIds.includes(natureId))
                 .map(a => a.id);
             
-            // Atualiza a seleção mantendo o que o usuário já selecionou, mas garantindo que as relacionadas estejam lá
             setSelectedVerificationAreas(prev => {
                 const combined = new Set([...prev, ...relatedAreas]);
                 return Array.from(combined);
@@ -102,35 +116,57 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         }
     }, [formData.idNatureza]);
 
-    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const countryId = e.target.value;
-        handleChange(e); 
-        setEstadosList([]);
-        setCidadesList([]);
-        setFormData(prev => ({...prev, idEstado: '', idCidade: ''}));
-        
-        if(countryId) {
-            const filteredEstados = estados.filter(e => e.idPais === Number(countryId));
-            setEstadosList(filteredEstados);
-        }
-    };
-
-    const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const stateId = e.target.value;
-        handleChange(e); 
-        setCidadesList([]);
-        setFormData(prev => ({...prev, idCidade: ''}));
-        
-        if(stateId) {
-            const filteredCidades = cidades.filter(c => c.idEstado === Number(stateId));
-            setCidadesList(filteredCidades);
-        }
-    };
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
+
+    // --- Handlers para Criação Dinâmica ---
+
+    const handleCreatePais = (nome: string) => {
+        const newId = Date.now();
+        const novoPais = { id: newId, nome };
+        setPaisesList(prev => [...prev, novoPais]);
+        // Atualiza formulário e limpa filhos
+        setFormData(prev => ({ ...prev, idPais: String(newId), idEstado: '', idCidade: '' }));
+        alert(`País "${nome}" adicionado com sucesso!`);
+    };
+
+    const handleCreateEstado = (nome: string) => {
+        if (!formData.idPais) {
+            alert("Selecione um país primeiro.");
+            return;
+        }
+        const newId = Date.now();
+        const novoEstado = { id: newId, nome, idPais: Number(formData.idPais) };
+        setAllEstadosList(prev => [...prev, novoEstado]);
+        setFormData(prev => ({ ...prev, idEstado: String(newId), idCidade: '' }));
+        alert(`Estado "${nome}" adicionado com sucesso!`);
+    };
+
+    const handleCreateCidade = (nome: string) => {
+        if (!formData.idEstado) {
+            alert("Selecione um estado primeiro.");
+            return;
+        }
+        const newId = Date.now();
+        const novaCidade = { id: newId, nome, idEstado: Number(formData.idEstado) };
+        setAllCidadesList(prev => [...prev, novaCidade]);
+        setFormData(prev => ({ ...prev, idCidade: String(newId) }));
+        alert(`Cidade "${nome}" adicionada com sucesso!`);
+    };
+
+    // Handlers para seleção nos componentes customizados
+    const handleSelectPais = (val: string | number) => {
+        setFormData(prev => ({ ...prev, idPais: String(val), idEstado: '', idCidade: '' }));
+    };
+    const handleSelectEstado = (val: string | number) => {
+        setFormData(prev => ({ ...prev, idEstado: String(val), idCidade: '' }));
+    };
+    const handleSelectCidade = (val: string | number) => {
+        setFormData(prev => ({ ...prev, idCidade: String(val) }));
+    };
+
     
     // TAGS Logic
     const handleAddTag = (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
@@ -198,7 +234,6 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         e.preventDefault();
         setSaving(true);
 
-        // Simulate API Delay
         setTimeout(() => {
             setSaving(false);
             const fakeId = editingId ? Number(editingId) : Date.now();
@@ -270,23 +305,39 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                         {icmrasList.map(i => <option key={i.id} value={i.descricao}>{i.descricao}</option>)}
                     </Select>
                 </FormField>
+                
+                {/* GEOGRAFIA com CreatableSelect */}
                 <FormField label="País" id="idPais">
-                    <Select id="idPais" value={formData.idPais} onChange={handleCountryChange}>
-                        <option value="">Selecione o país...</option>
-                        {paisesList.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                    </Select>
+                    <CreatableSelect
+                        id="idPais"
+                        value={formData.idPais}
+                        options={paisesList}
+                        onChange={handleSelectPais}
+                        onCreate={handleCreatePais}
+                        placeholder="Pesquisar ou Adicionar País..."
+                    />
                 </FormField>
                 <FormField label="Estado" id="idEstado">
-                    <Select id="idEstado" value={formData.idEstado} onChange={handleStateChange} disabled={!formData.idPais}>
-                        <option value="">Selecione o estado...</option>
-                        {estadosList.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
-                    </Select>
+                    <CreatableSelect
+                        id="idEstado"
+                        value={formData.idEstado}
+                        options={filteredEstados}
+                        onChange={handleSelectEstado}
+                        onCreate={handleCreateEstado}
+                        placeholder="Pesquisar ou Adicionar Estado..."
+                        disabled={!formData.idPais}
+                    />
                 </FormField>
                 <FormField label="Cidade" id="idCidade">
-                     <Select id="idCidade" className="flex-grow" value={formData.idCidade} onChange={handleChange} disabled={!formData.idEstado}>
-                        <option value="">Selecione a cidade...</option>
-                        {cidadesList.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                    </Select>
+                    <CreatableSelect
+                        id="idCidade"
+                        value={formData.idCidade}
+                        options={filteredCidades}
+                        onChange={handleSelectCidade}
+                        onCreate={handleCreateCidade}
+                        placeholder="Pesquisar ou Adicionar Cidade..."
+                        disabled={!formData.idEstado}
+                    />
                 </FormField>
             </div>
             
