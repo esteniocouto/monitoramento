@@ -11,7 +11,7 @@
         h3 { color: #2563EB; margin-top: 30px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em; }
         th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { bg-color: #f4f4f4; background-color: #EBF5FF; color: #1E40AF; }
+        th { background-color: #EBF5FF; color: #1E40AF; }
         code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 4px; font-family: Consolas, monospace; color: #d63384; }
         pre { background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 5px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.85em; }
         .toc { background-color: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 40px; }
@@ -32,7 +32,7 @@
 
     <div class="meta-info">
         <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
-        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.0.0</span></div>
+        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.1.0</span></div>
         <div class="meta-row"><span class="meta-label">Data de Emissão:</span> <span>19/11/2025</span></div>
         <div class="meta-row"><span class="meta-label">Responsável Técnico:</span> <span>ESTÊNIO COUTO BORGES JÚNIOR</span></div>
         <div class="meta-row"><span class="meta-label">SGBD:</span> <span>Microsoft SQL Server 2019+</span></div>
@@ -43,12 +43,6 @@
         <a href="#historico">1. Histórico de Versões</a>
         <a href="#modelo-fisico">2. Modelo Físico (Script SQL)</a>
         <a href="#dicionario">3. Dicionário de Dados</a>
-        <a href="#tabela-login">3.1. Tabela LOGIN</a>
-        <a href="#tabela-status">3.2. Tabela STATUS</a>
-        <a href="#tabela-rumor">3.3. Tabela RUMOR_EVENTO</a>
-        <a href="#tabela-comunicacao">3.4. Tabela COMUNICACAO</a>
-        <a href="#tabela-risco">3.5. Tabela RISCO</a>
-        <a href="#tabela-tags">3.6. Tabela TAG e RUMOR_TAG</a>
         <a href="#dimensionamento">4. Dimensionamento e Volumetria</a>
     </div>
 
@@ -67,12 +61,18 @@
                 <td>1.0.0</td>
                 <td>19/11/2025</td>
                 <td>Estênio Couto Borges Júnior</td>
-                <td>Criação inicial do documento, definição do modelo físico, dicionário de dados e estimativa de volumetria baseada nos requisitos do SIMRE-CEAVS.</td>
+                <td>Criação inicial do documento.</td>
+            </tr>
+            <tr>
+                <td>1.1.0</td>
+                <td>19/11/2025</td>
+                <td>Estênio Couto Borges Júnior</td>
+                <td>Inclusão de todas as tabelas (Comunicação, Atualização, Áreas) e ajuste de volumetria para 50 reg/mês.</td>
             </tr>
         </tbody>
     </table>
 
-    <h2 id="modelo-fisico">2. Modelo Físico (Script SQL Server)</h2>
+    <h2 id="modelo-fisico">2. Modelo Físico (Script SQL Server Completo)</h2>
     <p>Abaixo encontra-se o script DDL completo para a criação da estrutura do banco de dados.</p>
 
 <pre>
@@ -96,12 +96,12 @@ CREATE TABLE [dbo].[LOGIN](
 )
 GO
 
--- Tabelas de Domínio
+-- Tabelas de Domínio e Geografia
 CREATE TABLE [dbo].[STATUS](
     [ID_STATUS] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [NOME] [varchar](50) NOT NULL,
     [DESCRICAO] [varchar](150) NULL,
-    [COR] [varchar](20) NULL -- Hex ou ClassName
+    [COR] [varchar](20) NULL
 )
 GO
 
@@ -116,30 +116,90 @@ CREATE TABLE [dbo].[ESTADO] ( [ID_ESTADO] int IDENTITY(1,1) PRIMARY KEY, [NOME] 
 CREATE TABLE [dbo].[CIDADE] ( [ID_CIDADE] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(100), [ID_ESTADO] int FOREIGN KEY REFERENCES ESTADO(ID_ESTADO) );
 CREATE TABLE [dbo].[ICMRA] ( [ID_ICMRA] int IDENTITY(1,1) PRIMARY KEY, [DESCRICAO] varchar(255) );
 
+-- Tabelas Organizacionais
+CREATE TABLE [dbo].[AREA](
+    [ID_AREA] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [NOME_AREA] [varchar](30) NOT NULL,
+    [SIGLA] [nvarchar](10) NULL,
+    [DESCRICAO] [varchar](150) NULL
+)
+GO
+
+CREATE TABLE [dbo].[REPRESENTANTE](
+    [ID_REPRESENTANTE] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [ID_AREA] [int] NULL FOREIGN KEY REFERENCES [dbo].[AREA]([ID_AREA]),
+    [EMAIL] [varchar](100) NULL,
+    [NOME] [varchar](30) NULL,
+    [TITULARIDADE] [varchar](15) NULL
+)
+GO
+
+-- Tabelas Associativas
+CREATE TABLE [dbo].[NATUREZA_AREA](
+    [ID_AREA] [int] NULL FOREIGN KEY REFERENCES [dbo].[AREA]([ID_AREA]),
+    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA])
+)
+GO
+
+CREATE TABLE [dbo].[ICMRA_NATUREZA](
+    [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
+    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA])
+)
+GO
+
 -- Tabela Principal: RUMOR_EVENTO
 CREATE TABLE [dbo].[RUMOR_EVENTO](
     [ID_RUMOR_EVENTO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [IDU] [varchar](20) NULL, -- Identificador Único Temporal (DDMMYYYYHHmmss)
+    [IDU] [varchar](20) NULL,
     [TITULO] [varchar](255) NOT NULL,
     [DESCRICAO] [varchar](500) NULL,
-    [LOCAL_EVENTO] [varchar](100) NULL, -- Urbano, Rural...
+    [LOCAL_EVENTO] [varchar](100) NULL,
     [VERACIDADE] [varchar](50) NULL,
     [FUNDAMENTO_VERACIDADE] [varchar](255) NULL,
     [NOTIFICADOR_FONTE] [varchar](100) NULL,
     [DATA_RECEBIMENTO] [date] NULL,
     [TIPO_VIGILANCIA] [varchar](50) NULL,
-    [TIPO_ENCAMINHAMENTO] [varchar](50) NULL, -- Para Conhecimento/Providência
+    [TIPO_ENCAMINHAMENTO] [varchar](50) NULL,
     [NIVEL_CONFIANCA] [varchar](50) NULL,
     
-    -- Foreign Keys
     [ID_STATUS] [int] NULL FOREIGN KEY REFERENCES [dbo].[STATUS]([ID_STATUS]),
     [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA]),
     [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
     [ID_CIDADE] [int] NULL FOREIGN KEY REFERENCES [dbo].[CIDADE]([ID_CIDADE]),
     
-    -- Auditoria
     [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
     [DATA_CADASTRO] [datetime] DEFAULT GETDATE()
+)
+GO
+
+-- Comunicação de Risco
+CREATE TABLE [dbo].[COMUNICACAO](
+    [ID_COMUNICACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [DATA_EMAIL] [date] NULL,
+    [ACAO] [varchar](100) NULL,
+    [CNPJ] [varchar](20) NULL,
+    [CATEGORIA] [varchar](100) NULL,
+    [ESCOPO] [varchar](100) NULL,
+    [PRODUTO] [varchar](100) NULL,
+    [LOTE] [varchar](50) NULL,
+    [NOME_EMPRESA] [varchar](100) NULL,
+    [RESOLUCAO] [varchar](100) NULL,
+    [URL] [varchar](255) NULL,
+    [DATA_DOU] [date] NULL,
+    [MOTIVO] [varchar](255) NULL,
+    [EMAIL_NOTIFICADOR] [varchar](100) NULL,
+    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
+    [DATA_CADASTRO] [datetime] DEFAULT GETDATE()
+)
+GO
+
+-- Atualizações
+CREATE TABLE [dbo].[ATUALIZACAO](
+    [ID_ATUALIZACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [ID_RUMOR_EVENTO] [int] NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
+    [DESCRICAO_ATUALIZACAO] [varchar](500) NULL,
+    [DATA_ATUALIZACAO] [datetime] DEFAULT GETDATE(),
+    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN])
 )
 GO
 
@@ -166,8 +226,8 @@ CREATE TABLE [dbo].[RISCO](
     [CAPACIDADE_ENFRENTAMENTO] [int] NULL,
     [FREQUENCIA] [int] NULL,
     [PROBABILIDADE] [int] NULL,
-    [IMPACTO] [decimal](5,2) NULL, -- Calculado
-    [MATRIZ_RISCO] [decimal](5,2) NULL, -- Calculado
+    [IMPACTO] [decimal](5,2) NULL,
+    [MATRIZ_RISCO] [decimal](5,2) NULL,
     [RISCO_SAUDE] [varchar](255) NULL,
     [RECOMENDACAO] [varchar](255) NULL,
     [PAUTADO_CMA] [bit] DEFAULT 0
@@ -188,127 +248,102 @@ GO
 
     <h2 id="dicionario">3. Dicionário de Dados</h2>
 
-    <h3 id="tabela-login">3.1. Tabela: LOGIN</h3>
-    <p>Armazena as credenciais de acesso e perfis dos usuários do sistema.</p>
+    <h3>3.1. Tabela: LOGIN</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Atributo</th>
-                <th>Tipo de Dados</th>
-                <th>PK</th>
-                <th>FK</th>
-                <th>NN</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_LOGIN</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Identificador único do usuário.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome completo do usuário.</td></tr>
-            <tr><td>EMAIL</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Email corporativo (único).</td></tr>
-            <tr><td>LOGIN</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome de usuário para login (único).</td></tr>
-            <tr><td>SENHA</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Hash da senha (BCrypt).</td></tr>
-            <tr><td>PERFIL</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Sim</td><td>Perfil de acesso: 'ADMIN' ou 'USER'.</td></tr>
-            <tr><td>INATIVO</td><td>BIT</td><td>Não</td><td>Não</td><td>Não</td><td>Flag lógica de exclusão (0=Ativo, 1=Inativo).</td></tr>
+            <tr><td>ID_LOGIN</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID do usuário.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome completo.</td></tr>
+            <tr><td>LOGIN</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Username único.</td></tr>
+            <tr><td>SENHA</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Senha criptografada.</td></tr>
+            <tr><td>PERFIL</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>S</td><td>'ADMIN' ou 'USER'.</td></tr>
         </tbody>
     </table>
 
-    <h3 id="tabela-status">3.2. Tabela: STATUS</h3>
-    <p>Tabela dinâmica para cadastro de status personalizados.</p>
+    <h3>3.2. Tabela: RUMOR_EVENTO</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Atributo</th>
-                <th>Tipo de Dados</th>
-                <th>PK</th>
-                <th>FK</th>
-                <th>NN</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_STATUS</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Identificador único.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome do status (ex: "Em Monitoramento").</td></tr>
-            <tr><td>COR</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Não</td><td>Código Hexadecimal ou classe de cor.</td></tr>
+            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador sequencial.</td></tr>
+            <tr><td>IDU</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>N</td><td>ID Temporal (DDMMYYYYHHmmss).</td></tr>
+            <tr><td>TITULO</td><td>VARCHAR(255)</td><td>N</td><td>N</td><td>S</td><td>Título do evento.</td></tr>
+            <tr><td>ID_STATUS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Status atual do evento.</td></tr>
+            <tr><td>ID_NATUREZA</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Classificação da natureza.</td></tr>
+            <tr><td>TIPO_ENCAMINHAMENTO</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>N</td><td>Para Conhecimento/Providência.</td></tr>
         </tbody>
     </table>
 
-    <h3 id="tabela-rumor">3.3. Tabela: RUMOR_EVENTO</h3>
-    <p>Tabela central que armazena os dados do monitoramento.</p>
+    <h3>3.3. Tabela: COMUNICACAO</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Atributo</th>
-                <th>Tipo de Dados</th>
-                <th>PK</th>
-                <th>FK</th>
-                <th>NN</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_RUMOR_EVENTO</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Chave primária.</td></tr>
-            <tr><td>IDU</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Não</td><td>Identificador Temporal (DDMMYYYYHHmmss).</td></tr>
-            <tr><td>TITULO</td><td>VARCHAR(255)</td><td>Não</td><td>Não</td><td>Sim</td><td>Título do evento/rumor.</td></tr>
-            <tr><td>DESCRICAO</td><td>VARCHAR(500)</td><td>Não</td><td>Não</td><td>Não</td><td>Detalhamento do evento.</td></tr>
-            <tr><td>TIPO_ENCAMINHAMENTO</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Não</td><td>'Para Conhecimento' ou 'Para Providência'.</td></tr>
-            <tr><td>NIVEL_CONFIANCA</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Não</td><td>Nível de confiança da informação.</td></tr>
-            <tr><td>ID_STATUS</td><td>INT</td><td>Não</td><td>Sim</td><td>Não</td><td>Referência à tabela STATUS.</td></tr>
-            <tr><td>ID_NATUREZA</td><td>INT</td><td>Não</td><td>Sim</td><td>Não</td><td>Referência à tabela NATUREZA.</td></tr>
+            <tr><td>ID_COMUNICACAO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador da comunicação.</td></tr>
+            <tr><td>CNPJ</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>N</td><td>CNPJ da empresa envolvida.</td></tr>
+            <tr><td>PRODUTO</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>N</td><td>Nome do produto.</td></tr>
+            <tr><td>LOTE</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>N</td><td>Lote do produto.</td></tr>
+            <tr><td>RESOLUCAO</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>N</td><td>Número da resolução (RE).</td></tr>
         </tbody>
     </table>
 
-    <h3 id="tabela-risco">3.4. Tabela: RISCO</h3>
-    <p>Armazena os cálculos da Matriz de Risco (Metodologia STAR).</p>
+    <h3>3.4. Tabela: RISCO</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Atributo</th>
-                <th>Tipo de Dados</th>
-                <th>PK</th>
-                <th>FK</th>
-                <th>NN</th>
-                <th>Descrição</th>
-            </tr>
-        </thead>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_RISCO</td><td>INT</td><td>Sim</td><td>Não</td><td>Sim</td><td>Chave primária.</td></tr>
-            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>Não</td><td>Sim</td><td>Sim</td><td>Vínculo com o Rumor (1:1).</td></tr>
-            <tr><td>IMPACTO</td><td>DECIMAL(5,2)</td><td>Não</td><td>Não</td><td>Não</td><td>Cálculo: (Gravidade+Vuln+Capacidade)/3.</td></tr>
-            <tr><td>MATRIZ_RISCO</td><td>DECIMAL(5,2)</td><td>Não</td><td>Não</td><td>Não</td><td>Cálculo: Impacto + Probabilidade.</td></tr>
-            <tr><td>PAUTADO_CMA</td><td>BIT</td><td>Não</td><td>Não</td><td>Não</td><td>Indica se deve ir para reunião CMA.</td></tr>
+            <tr><td>ID_RISCO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da avaliação.</td></tr>
+            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com o evento.</td></tr>
+            <tr><td>IMPACTO</td><td>DECIMAL(5,2)</td><td>N</td><td>N</td><td>N</td><td>Média dos fatores de impacto.</td></tr>
+            <tr><td>MATRIZ_RISCO</td><td>DECIMAL(5,2)</td><td>N</td><td>N</td><td>N</td><td>Soma de Impacto + Probabilidade.</td></tr>
         </tbody>
     </table>
 
-    <h2 id="dimensionamento">4. Dimensionamento e Volumetria</h2>
-    <p>Estimativa de crescimento do banco de dados baseada no tamanho médio das linhas.</p>
+    <h3>3.5. Tabela: ATUALIZACAO</h3>
+    <table>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
+        <tbody>
+            <tr><td>ID_ATUALIZACAO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da atualização.</td></tr>
+            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Evento relacionado.</td></tr>
+            <tr><td>DESCRICAO</td><td>VARCHAR(500)</td><td>N</td><td>N</td><td>N</td><td>Texto da atualização.</td></tr>
+        </tbody>
+    </table>
 
-    <h3>Estimativa de Tamanho de Linha (Bytes)</h3>
+    <h3>3.6. Tabela: AREA</h3>
+    <table>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
+        <tbody>
+            <tr><td>ID_AREA</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da área técnica.</td></tr>
+            <tr><td>SIGLA</td><td>NVARCHAR(10)</td><td>N</td><td>N</td><td>N</td><td>Sigla (ex: GGTPS).</td></tr>
+            <tr><td>NOME_AREA</td><td>VARCHAR(30)</td><td>N</td><td>N</td><td>S</td><td>Nome completo da área.</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="dimensionamento">4. Dimensionamento e Volumetria (Base 50/mês)</h2>
+    <p>Estimativa de crescimento do banco de dados considerando a entrada de <strong>50 registros por mês</strong>.</p>
+
     <ul>
-        <li><strong>RUMOR_EVENTO:</strong> ~1050 bytes (considerando uso médio de VARCHARs).</li>
-        <li><strong>RISCO:</strong> ~100 bytes.</li>
-        <li><strong>ATUALIZACAO:</strong> ~550 bytes.</li>
-        <li><strong>COMUNICACAO:</strong> ~800 bytes.</li>
+        <li><strong>Registros por Mês:</strong> 50</li>
+        <li><strong>Registros por Ano:</strong> 600</li>
+        <li><strong>Registros em 5 Anos:</strong> 3.000</li>
     </ul>
 
-    <h3>Projeção de Crescimento (10.000 Registros)</h3>
-    <p>Considerando um cenário onde cada Rumor gera 1 Risco e média de 5 Atualizações:</p>
+    <h3>Projeção de Armazenamento (5 Anos - 3.000 Registros)</h3>
     <table>
         <thead>
             <tr>
                 <th>Tabela</th>
-                <th>Linhas</th>
-                <th>Tamanho Estimado (MB)</th>
+                <th>Tamanho Médio Linha</th>
+                <th>Total Linhas (5 Anos)</th>
+                <th>Espaço Estimado</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td>RUMOR_EVENTO</td><td>10.000</td><td>~10.5 MB</td></tr>
-            <tr><td>RISCO</td><td>10.000</td><td>~1.0 MB</td></tr>
-            <tr><td>ATUALIZACAO</td><td>50.000</td><td>~27.5 MB</td></tr>
-            <tr><td>TAGS / DOMÍNIOS</td><td>-</td><td>~2.0 MB</td></tr>
-            <tr><td><strong>TOTAL</strong></td><td>-</td><td><strong>~41.0 MB</strong></td></tr>
+            <tr><td>RUMOR_EVENTO</td><td>~1.2 KB</td><td>3.000</td><td>~3.6 MB</td></tr>
+            <tr><td>RISCO</td><td>~0.1 KB</td><td>3.000</td><td>~0.3 MB</td></tr>
+            <tr><td>ATUALIZACAO (3x por evento)</td><td>~0.5 KB</td><td>9.000</td><td>~4.5 MB</td></tr>
+            <tr><td>COMUNICACAO</td><td>~0.8 KB</td><td>1.500 (Estimado)</td><td>~1.2 MB</td></tr>
+            <tr><td><strong>TOTAL (Dados)</strong></td><td>-</td><td>-</td><td><strong>~9.6 MB</strong></td></tr>
         </tbody>
     </table>
-    <p><em>Nota: Estes valores referem-se apenas aos dados brutos. Índices e Logs do SQL Server aumentarão o uso em disco em aproximadamente 30-50%.</em></p>
+    <p><em>Considerando índices e logs, o banco deve ocupar menos de <strong>20 MB</strong> em 5 anos, o que é extremamente leve para o SQL Server.</em></p>
 
     <br><br>
     <hr>
