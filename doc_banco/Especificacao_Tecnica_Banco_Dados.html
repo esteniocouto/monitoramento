@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Especificação Técnica do Banco de Dados - SIMRE-CEAVS</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 40px; }
+        h1 { color: #1E40AF; border-bottom: 2px solid #1E40AF; padding-bottom: 10px; }
+        h2 { color: #1D4ED8; margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        h3 { color: #2563EB; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { bg-color: #f4f4f4; background-color: #EBF5FF; color: #1E40AF; }
+        code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 4px; font-family: Consolas, monospace; color: #d63384; }
+        pre { background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 5px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.85em; }
+        .toc { background-color: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 40px; }
+        .toc a { text-decoration: none; color: #2563EB; display: block; margin-bottom: 5px; }
+        .toc a:hover { text-decoration: underline; }
+        .meta-info { margin-bottom: 40px; background: #fff; border: 1px solid #ddd; padding: 20px; }
+        .meta-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
+        .meta-label { font-weight: bold; color: #555; }
+        .center { text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="center">
+        <h1>Especificação Técnica de Banco de Dados</h1>
+        <h2>Painel de Controle de Monitoramento (SIMRE-CEAVS)</h2>
+    </div>
+
+    <div class="meta-info">
+        <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
+        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.0.0</span></div>
+        <div class="meta-row"><span class="meta-label">Data de Emissão:</span> <span>19/11/2025</span></div>
+        <div class="meta-row"><span class="meta-label">Responsável Técnico:</span> <span>ESTÊNIO COUTO BORGES JÚNIOR</span></div>
+        <div class="meta-row"><span class="meta-label">SGBD:</span> <span>Microsoft SQL Server 2019+</span></div>
+    </div>
+
+    <div class="toc">
+        <h3>Sumário</h3>
+        <a href="#historico">1. Histórico de Versões</a>
+        <a href="#modelo-fisico">2. Modelo Físico (Script SQL)</a>
+        <a href="#dicionario">3. Dicionário de Dados</a>
+        <a href="#tabela-login">3.1. Tabela LOGIN</a>
+        <a href="#tabela-status">3.2. Tabela STATUS</a>
+        <a href="#tabela-rumor">3.3. Tabela RUMOR_EVENTO</a>
+        <a href="#tabela-comunicacao">3.4. Tabela COMUNICACAO</a>
+        <a href="#tabela-risco">3.5. Tabela RISCO</a>
+        <a href="#tabela-tags">3.6. Tabela TAG e RUMOR_TAG</a>
+        <a href="#dimensionamento">4. Dimensionamento e Volumetria</a>
+    </div>
+
+    <h2 id="historico">1. Histórico de Versões</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Versão</th>
+                <th>Data</th>
+                <th>Autor</th>
+                <th>Descrição das Alterações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1.0.0</td>
+                <td>19/11/2025</td>
+                <td>Estênio Couto Borges Júnior</td>
+                <td>Criação inicial do documento, definição do modelo físico, dicionário de dados e estimativa de volumetria baseada nos requisitos do SIMRE-CEAVS.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="modelo-fisico">2. Modelo Físico (Script SQL Server)</h2>
+    <p>Abaixo encontra-se o script DDL completo para a criação da estrutura do banco de dados.</p>
+
+<pre>
+USE [master]
+GO
+CREATE DATABASE [monitoramento]
+GO
+USE [monitoramento]
+GO
+
+-- Tabela de Usuários
+CREATE TABLE [dbo].[LOGIN](
+    [ID_LOGIN] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [NOME] [varchar](100) NOT NULL,
+    [EMAIL] [varchar](100) NOT NULL UNIQUE,
+    [LOGIN] [varchar](50) NOT NULL UNIQUE,
+    [SENHA] [varchar](100) NOT NULL, -- Hash BCrypt
+    [PERFIL] [varchar](20) DEFAULT 'USER' NOT NULL,
+    [INATIVO] [bit] DEFAULT 0,
+    [DATA_CRIACAO] [datetime] DEFAULT GETDATE()
+)
+GO
+
+-- Tabelas de Domínio
+CREATE TABLE [dbo].[STATUS](
+    [ID_STATUS] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [NOME] [varchar](50) NOT NULL,
+    [DESCRICAO] [varchar](150) NULL,
+    [COR] [varchar](20) NULL -- Hex ou ClassName
+)
+GO
+
+CREATE TABLE [dbo].[NATUREZA](
+    [ID_NATUREZA] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [DESCRICAO_NATUREZA] [varchar](150) NOT NULL
+)
+GO
+
+CREATE TABLE [dbo].[PAIS] ( [ID_PAIS] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(100) );
+CREATE TABLE [dbo].[ESTADO] ( [ID_ESTADO] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(50), [ID_PAIS] int FOREIGN KEY REFERENCES PAIS(ID_PAIS) );
+CREATE TABLE [dbo].[CIDADE] ( [ID_CIDADE] int IDENTITY(1,1) PRIMARY KEY, [NOME] varchar(100), [ID_ESTADO] int FOREIGN KEY REFERENCES ESTADO(ID_ESTADO) );
+CREATE TABLE [dbo].[ICMRA] ( [ID_ICMRA] int IDENTITY(1,1) PRIMARY KEY, [DESCRICAO] varchar(255) );
+
+-- Tabela Principal: RUMOR_EVENTO
+CREATE TABLE [dbo].[RUMOR_EVENTO](
+    [ID_RUMOR_EVENTO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [IDU] [varchar](20) NULL, -- Identificador Único Temporal (DDMMYYYYHHmmss)
+    [TITULO] [varchar](255) NOT NULL,
+    [DESCRICAO] [varchar](500) NULL,
+    [LOCAL_EVENTO] [varchar](100) NULL, -- Urbano, Rural...
+    [VERACIDADE] [varchar](50) NULL,
+    [FUNDAMENTO_VERACIDADE] [varchar](255) NULL,
+    [NOTIFICADOR_FONTE] [varchar](100) NULL,
+    [DATA_RECEBIMENTO] [date] NULL,
+    [TIPO_VIGILANCIA] [varchar](50) NULL,
+    [TIPO_ENCAMINHAMENTO] [varchar](50) NULL, -- Para Conhecimento/Providência
+    [NIVEL_CONFIANCA] [varchar](50) NULL,
+    
+    -- Foreign Keys
+    [ID_STATUS] [int] NULL FOREIGN KEY REFERENCES [dbo].[STATUS]([ID_STATUS]),
+    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA]),
+    [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
+    [ID_CIDADE] [int] NULL FOREIGN KEY REFERENCES [dbo].[CIDADE]([ID_CIDADE]),
+    
+    -- Auditoria
+    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
+    [DATA_CADASTRO] [datetime] DEFAULT GETDATE()
+)
+GO
+
+-- Tags (Many-to-Many)
+CREATE TABLE [dbo].[TAG](
+    [ID_TAG] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [NOME_TAG] [varchar](50) NOT NULL UNIQUE
+)
+GO
+
+CREATE TABLE [dbo].[RUMOR_TAG](
+    [ID_RUMOR_EVENTO] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
+    [ID_TAG] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[TAG]([ID_TAG]),
+    PRIMARY KEY ([ID_RUMOR_EVENTO], [ID_TAG])
+)
+GO
+
+-- Avaliação de Risco (1:1)
+CREATE TABLE [dbo].[RISCO](
+    [ID_RISCO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [ID_RUMOR_EVENTO] [int] NOT NULL UNIQUE FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
+    [GRAVIDADE] [int] NULL,
+    [VULNERABILIDADE] [int] NULL,
+    [CAPACIDADE_ENFRENTAMENTO] [int] NULL,
+    [FREQUENCIA] [int] NULL,
+    [PROBABILIDADE] [int] NULL,
+    [IMPACTO] [decimal](5,2) NULL, -- Calculado
+    [MATRIZ_RISCO] [decimal](5,2) NULL, -- Calculado
+    [RISCO_SAUDE] [varchar](255) NULL,
+    [RECOMENDACAO] [varchar](255) NULL,
+    [PAUTADO_CMA] [bit] DEFAULT 0
+)
+GO
+
+-- Verificação (1:1)
+CREATE TABLE [dbo].[VERIFICACAO](
+    [ID_VERIFICACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [ID_RUMOR_EVENTO] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
+    [VERIFICADO] [bit] DEFAULT 0,
+    [DATA_VERIFICACAO] [date] NULL,
+    [OBSERVACAO] [varchar](500) NULL,
+    [ID_USUARIO_VERIFICADOR] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN])
+)
+GO
+</pre>
+
+    <h2 id="dicionario">3. Dicionário de Dados</h2>
+
+    <h3 id="tabela-login">3.1. Tabela: LOGIN</h3>
+    <p>Armazena as credenciais de acesso e perfis dos usuários do sistema.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Atributo</th>
+                <th>Tipo de Dados</th>
+                <th>PK</th>
+                <th>FK</th>
+                <th>NN</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>ID_LOGIN</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Identificador único do usuário.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome completo do usuário.</td></tr>
+            <tr><td>EMAIL</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Email corporativo (único).</td></tr>
+            <tr><td>LOGIN</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome de usuário para login (único).</td></tr>
+            <tr><td>SENHA</td><td>VARCHAR(100)</td><td>Não</td><td>Não</td><td>Sim</td><td>Hash da senha (BCrypt).</td></tr>
+            <tr><td>PERFIL</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Sim</td><td>Perfil de acesso: 'ADMIN' ou 'USER'.</td></tr>
+            <tr><td>INATIVO</td><td>BIT</td><td>Não</td><td>Não</td><td>Não</td><td>Flag lógica de exclusão (0=Ativo, 1=Inativo).</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="tabela-status">3.2. Tabela: STATUS</h3>
+    <p>Tabela dinâmica para cadastro de status personalizados.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Atributo</th>
+                <th>Tipo de Dados</th>
+                <th>PK</th>
+                <th>FK</th>
+                <th>NN</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>ID_STATUS</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Identificador único.</td></tr>
+            <tr><td>NOME</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Sim</td><td>Nome do status (ex: "Em Monitoramento").</td></tr>
+            <tr><td>COR</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Não</td><td>Código Hexadecimal ou classe de cor.</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="tabela-rumor">3.3. Tabela: RUMOR_EVENTO</h3>
+    <p>Tabela central que armazena os dados do monitoramento.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Atributo</th>
+                <th>Tipo de Dados</th>
+                <th>PK</th>
+                <th>FK</th>
+                <th>NN</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>ID_RUMOR_EVENTO</td><td>INT (Identity)</td><td>Sim</td><td>Não</td><td>Sim</td><td>Chave primária.</td></tr>
+            <tr><td>IDU</td><td>VARCHAR(20)</td><td>Não</td><td>Não</td><td>Não</td><td>Identificador Temporal (DDMMYYYYHHmmss).</td></tr>
+            <tr><td>TITULO</td><td>VARCHAR(255)</td><td>Não</td><td>Não</td><td>Sim</td><td>Título do evento/rumor.</td></tr>
+            <tr><td>DESCRICAO</td><td>VARCHAR(500)</td><td>Não</td><td>Não</td><td>Não</td><td>Detalhamento do evento.</td></tr>
+            <tr><td>TIPO_ENCAMINHAMENTO</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Não</td><td>'Para Conhecimento' ou 'Para Providência'.</td></tr>
+            <tr><td>NIVEL_CONFIANCA</td><td>VARCHAR(50)</td><td>Não</td><td>Não</td><td>Não</td><td>Nível de confiança da informação.</td></tr>
+            <tr><td>ID_STATUS</td><td>INT</td><td>Não</td><td>Sim</td><td>Não</td><td>Referência à tabela STATUS.</td></tr>
+            <tr><td>ID_NATUREZA</td><td>INT</td><td>Não</td><td>Sim</td><td>Não</td><td>Referência à tabela NATUREZA.</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="tabela-risco">3.4. Tabela: RISCO</h3>
+    <p>Armazena os cálculos da Matriz de Risco (Metodologia STAR).</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Atributo</th>
+                <th>Tipo de Dados</th>
+                <th>PK</th>
+                <th>FK</th>
+                <th>NN</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>ID_RISCO</td><td>INT</td><td>Sim</td><td>Não</td><td>Sim</td><td>Chave primária.</td></tr>
+            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>Não</td><td>Sim</td><td>Sim</td><td>Vínculo com o Rumor (1:1).</td></tr>
+            <tr><td>IMPACTO</td><td>DECIMAL(5,2)</td><td>Não</td><td>Não</td><td>Não</td><td>Cálculo: (Gravidade+Vuln+Capacidade)/3.</td></tr>
+            <tr><td>MATRIZ_RISCO</td><td>DECIMAL(5,2)</td><td>Não</td><td>Não</td><td>Não</td><td>Cálculo: Impacto + Probabilidade.</td></tr>
+            <tr><td>PAUTADO_CMA</td><td>BIT</td><td>Não</td><td>Não</td><td>Não</td><td>Indica se deve ir para reunião CMA.</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="dimensionamento">4. Dimensionamento e Volumetria</h2>
+    <p>Estimativa de crescimento do banco de dados baseada no tamanho médio das linhas.</p>
+
+    <h3>Estimativa de Tamanho de Linha (Bytes)</h3>
+    <ul>
+        <li><strong>RUMOR_EVENTO:</strong> ~1050 bytes (considerando uso médio de VARCHARs).</li>
+        <li><strong>RISCO:</strong> ~100 bytes.</li>
+        <li><strong>ATUALIZACAO:</strong> ~550 bytes.</li>
+        <li><strong>COMUNICACAO:</strong> ~800 bytes.</li>
+    </ul>
+
+    <h3>Projeção de Crescimento (10.000 Registros)</h3>
+    <p>Considerando um cenário onde cada Rumor gera 1 Risco e média de 5 Atualizações:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Tabela</th>
+                <th>Linhas</th>
+                <th>Tamanho Estimado (MB)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>RUMOR_EVENTO</td><td>10.000</td><td>~10.5 MB</td></tr>
+            <tr><td>RISCO</td><td>10.000</td><td>~1.0 MB</td></tr>
+            <tr><td>ATUALIZACAO</td><td>50.000</td><td>~27.5 MB</td></tr>
+            <tr><td>TAGS / DOMÍNIOS</td><td>-</td><td>~2.0 MB</td></tr>
+            <tr><td><strong>TOTAL</strong></td><td>-</td><td><strong>~41.0 MB</strong></td></tr>
+        </tbody>
+    </table>
+    <p><em>Nota: Estes valores referem-se apenas aos dados brutos. Índices e Logs do SQL Server aumentarão o uso em disco em aproximadamente 30-50%.</em></p>
+
+    <br><br>
+    <hr>
+    <p class="center" style="font-size: 0.8em; color: #777;">Documento gerado automaticamente para o projeto SIMRE-CEAVS.</p>
+
+</body>
+</html>
+    
