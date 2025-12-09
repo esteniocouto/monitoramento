@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { connectDB } from './config/db';
 
 // Controllers
@@ -13,9 +12,11 @@ import { verifyToken, verifyAdmin } from './middleware/auth';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Fix: Declare __dirname to avoid TypeScript errors in some environments
+declare var __dirname: string;
 
+// Configuração para CommonJS (Padrão do ts-node neste projeto)
+// Removemos import.meta.url para evitar erros de sintaxe no Windows/Node padrão
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -44,8 +45,9 @@ app.post('/api/comunicacoes', verifyToken, MonitoramentoController.createComunic
 
 // --- SERVIR FRONTEND EM PRODUÇÃO (Estaticamente) ---
 // Define a pasta 'dist' (build do React) como estática
+// __dirname funciona nativamente em CommonJS
 const frontendBuildPath = path.join(__dirname, '../../dist');
-app.use(express.static(frontendBuildPath));
+app.use(express.static(frontendBuildPath) as any);
 
 // Qualquer rota que não seja API será direcionada para o index.html do React
 app.get('*', (req, res) => {
