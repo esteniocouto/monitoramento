@@ -13,6 +13,7 @@ export type PageKey =
   'relatorio-monitoramento' |
   'relatorio-representantes' |
   'relatorio-monitoramentos-verificados' |
+  'relatorio-nao-verificados' |
   'relatorio-cma' |
   'relatorio-risco-detalhado';
 

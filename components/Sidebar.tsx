@@ -9,7 +9,8 @@ import {
   ChartBarSquareIcon,
   ShieldCheckIcon,
   UserCircleIcon,
-  TagIcon
+  TagIcon,
+  ExclamationTriangleIcon
 } from './icons/IconComponents';
 
 interface SidebarProps {
@@ -34,6 +35,7 @@ const relatoriosItems: MenuItem[] = [
   { key: 'relatorio-monitoramento', label: 'Monitoramento', icon: DocumentTextIcon },
   { key: 'relatorio-representantes', label: 'Representantes', icon: DocumentTextIcon },
   { key: 'relatorio-monitoramentos-verificados', label: 'Verificados', icon: CheckBadgeIcon },
+  { key: 'relatorio-nao-verificados', label: 'Não Verificados', icon: ExclamationTriangleIcon },
   { key: 'relatorio-cma', label: 'Relatório CMA', icon: ClipboardDocumentListIcon },
   { key: 'relatorio-risco-detalhado', label: 'Risco Detalhado', icon: ChartBarSquareIcon },
 ];

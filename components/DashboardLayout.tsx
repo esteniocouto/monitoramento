@@ -14,6 +14,7 @@ import CadastroStatus from '../pages/cadastro/CadastroStatus';
 import RelatorioMonitoramento from '../pages/relatorios/RelatorioMonitoramento';
 import RelatorioRepresentantes from '../pages/relatorios/RelatorioRepresentantes';
 import RelatorioMonitoramentosVerificados from '../pages/relatorios/RelatorioMonitoramentosVerificados';
+import RelatorioNaoVerificados from '../pages/relatorios/RelatorioNaoVerificados';
 import RelatorioCMA from '../pages/relatorios/RelatorioCMA';
 import Placeholder from '../pages/Placeholder';
 import RelatorioRiscoDetalhado from '../pages/relatorios/RelatorioRiscoDetalhado';
@@ -36,6 +37,7 @@ const pageComponents: Record<PageKey, React.ComponentType<any>> = {
     'relatorio-monitoramento': RelatorioMonitoramento,
     'relatorio-representantes': RelatorioRepresentantes,
     'relatorio-monitoramentos-verificados': RelatorioMonitoramentosVerificados,
+    'relatorio-nao-verificados': RelatorioNaoVerificados,
     'relatorio-cma': RelatorioCMA,
     'relatorio-risco-detalhado': RelatorioRiscoDetalhado,
 };
@@ -52,6 +54,7 @@ const pageTitles: Record<PageKey, string> = {
     'relatorio-monitoramento': 'Relatório de Monitoramento',
     'relatorio-representantes': 'Relatório de Representantes',
     'relatorio-monitoramentos-verificados': 'Relatório de Monitoramentos Verificados',
+    'relatorio-nao-verificados': 'Relatório de Monitoramentos Não Verificados',
     'relatorio-cma': 'Relatório CMA',
     'relatorio-risco-detalhado': 'Relatório de Risco Detalhado',
 };
@@ -84,6 +87,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout, userRole, u
     }
     if (activePage === 'relatorio-cma') {
       return <RelatorioCMA onEdit={(id) => handleNavigate('cadastro-monitoramento', id)} />;
+    }
+    if (activePage === 'relatorio-nao-verificados') {
+      return <RelatorioNaoVerificados onVerify={(id) => handleNavigate('cadastro-monitoramento', id)} />;
     }
     if (activePage === 'cadastro-monitoramento') {
       return (
