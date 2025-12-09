@@ -1,23 +1,16 @@
-
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
-    user?: {
-        id: number;
-        nome: string;
-        role: string;
-        iat: number;
-        exp: number;
-    };
+    user?: any;
 }
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = (req as any).headers.authorization;
+export const verifyToken = (req: any, res: any, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return (res as any).status(401).json({ message: 'Acesso negado. Token não fornecido.' });
+        return res.status(401).json({ message: 'Acesso negado. Token não fornecido.' });
     }
 
     try {
@@ -25,19 +18,14 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         (req as any).user = verified;
         next();
     } catch (err) {
-        (res as any).status(403).json({ message: 'Token inválido ou expirado.' });
+        res.status(403).json({ message: 'Token inválido ou expirado.' });
     }
 };
 
-export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const verifyAdmin = (req: any, res: any, next: NextFunction) => {
     const user = (req as any).user;
-    
-    if (!user) {
-        return (res as any).status(401).json({ message: 'Usuário não autenticado.' });
-    }
-    
-    if (user.role !== 'ADMIN') {
-        return (res as any).status(403).json({ message: 'Acesso negado. Requer privilégios de administrador.' });
+    if (!user || user.role !== 'ADMIN') {
+        return res.status(403).json({ message: 'Acesso negado. Requer privilégios de administrador.' });
     }
     next();
 };

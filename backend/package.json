@@ -1,8 +1,29 @@
 {
-  "name": "monitoramento-api-python",
+  "name": "monitoramento-api",
   "version": "1.0.0",
-  "description": "Backend migrado para Python/FastAPI",
+  "description": "API Backend em Node.js para o sistema SIMRE-CEAVS",
+  "main": "dist/server.js",
   "scripts": {
-    "info": "echo 'Este backend agora roda em Python. Use o arquivo iniciar_sistema.bat ou uvicorn main:app'"
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mssql": "^10.0.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/mssql": "^8.1.2",
+    "@types/node": "^20.11.16",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
   }
 }
