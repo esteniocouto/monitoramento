@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { ShieldCheckIcon } from './icons/IconComponents';
 
 interface LoginPageProps {
   onLogin: (userData: any) => void;
@@ -18,23 +17,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       setError('');
       setLoading(true);
 
-      // SIMULAÇÃO DE LOGIN (MOCK)
+      // Simulação de delay de rede
       setTimeout(() => {
-          // Simula um usuário Admin se o login for 'admin', caso contrário User comum
-          const isAdmin = email.toLowerCase().includes('admin');
+          setLoading(false);
+          
+          // Lógica de Mock: Aceita qualquer senha, define role baseado no email
+          const isAdmin = email.includes('admin');
           
           const mockUser = {
               id: 1,
-              nome: isAdmin ? 'Administrador' : 'Usuário Teste',
+              nome: isAdmin ? 'Administrador' : 'Usuário Padrão',
               email: email,
-              role: isAdmin ? 'ADMIN' : 'USER'
+              role: isAdmin ? 'ADMIN' : 'USER',
+              token: 'mock-jwt-token-123456'
           };
 
-          const mockToken = 'mock-token-xyz-123';
-
-          localStorage.setItem('token', mockToken);
+          localStorage.setItem('token', mockUser.token);
           onLogin(mockUser);
-          setLoading(false);
       }, 1000);
 
     } else {
@@ -47,7 +46,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
         <div className="flex flex-col items-center">
             <div className="mb-2">
-                {/* Imagem da ANVISA via URL */}
                 <img 
                     src="https://fesaudesp.org.br/wp-content/uploads/2024/12/anvisa2-1024x576.jpg" 
                     alt="Logo ANVISA" 
@@ -62,15 +60,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="bg-blue-50 p-4 rounded-md mb-4 text-sm text-blue-800 border border-blue-200">
-                <strong>Modo de Desenvolvimento:</strong><br/>
-                Use qualquer email/senha.<br/>
-                Inclua "admin" no email para testar acesso total.
-            </div>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email-address" className="sr-only">
-                Email ou Login
+                Email
               </label>
               <input
                 id="email-address"
@@ -79,7 +72,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email ou Login"
+                placeholder="Email (use 'admin' para acesso total)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -95,7 +88,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 autoComplete="current-password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Senha"
+                placeholder="Senha (qualquer valor)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -114,6 +107,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
+          </div>
+          
+          <div className="text-center text-xs text-gray-500">
+            <p>Modo Demonstração (Dados Mockados)</p>
           </div>
         </form>
       </div>

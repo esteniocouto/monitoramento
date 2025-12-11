@@ -1,8 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { RumorEventoData, naturezas, paises as mockPaises, estados as mockEstados, cidades as mockCidades, icmras, areas, statusList } from '../../data/mockData';
+// Use data directly from mock
+import { 
+    RumorEventoData, 
+    naturezas as mockNaturezas, 
+    statusList,
+    icmras as mockIcmras,
+    paises as mockPaises,
+    estados as mockEstados,
+    cidades as mockCidades
+} from '../../data/mockData';
 import { Input, Textarea, Select, FormField, CreatableSelect } from './FormControls';
-import { XMarkIcon } from '../icons/IconComponents';
 
 interface FormProps {
     onBack: () => void;
@@ -16,18 +24,14 @@ interface RumorEventoFormProps extends FormProps {
 
 const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editingId, initialData }) => {
     
-    // Using Mock Data directly but coping to state to allow additions
-    const naturezasList = naturezas;
-    const icmrasList = icmras;
+    // API Data States (Simulated from Mock)
+    const [naturezasList, setNaturezasList] = useState<any[]>(mockNaturezas);
+    const [icmrasList, setIcmrasList] = useState<any[]>(mockIcmras);
+    const [paisesList, setPaisesList] = useState<any[]>(mockPaises);
     
-    // Listas locais de geografia (para permitir adicionar novos)
-    const [paisesList, setPaisesList] = useState<{id: number, nome: string}[]>(mockPaises);
-    const [allEstadosList, setAllEstadosList] = useState<{id: number, nome: string, idPais: number}[]>(mockEstados);
-    const [allCidadesList, setAllCidadesList] = useState<{id: number, nome: string, idEstado: number}[]>(mockCidades);
-
     // Listas filtradas para exibição
-    const [filteredEstados, setFilteredEstados] = useState<{id: number, nome: string}[]>([]);
-    const [filteredCidades, setFilteredCidades] = useState<{id: number, nome: string}[]>([]);
+    const [filteredEstados, setFilteredEstados] = useState<any[]>([]);
+    const [filteredCidades, setFilteredCidades] = useState<any[]>([]);
     
     const [saving, setSaving] = useState(false);
 
@@ -36,25 +40,28 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         notificadorFonte: '', idNatureza: '', descricao: '', idPais: '', idEstado: '', idCidade: '', tipoVigilancia: '',
         status: 'Em Monitoramento', idIcmra: '', tipoEncaminhamento: ''
     });
-    
-    // TAGS Management
-    const [tags, setTags] = useState<string[]>([]);
-    const [tagInput, setTagInput] = useState('');
 
-    const [verification, setVerification] = useState({
-        duplaVerificacao: false,
-        observacaoVerificacao: '',
-        dataVerificacao: ''
-    });
+    // Load Estados when Pais changes (Mock Logic)
+    useEffect(() => {
+        if (formData.idPais) {
+            const filtered = mockEstados.filter(e => String(e.idPais) === String(formData.idPais));
+            setFilteredEstados(filtered);
+        } else {
+            setFilteredEstados([]);
+        }
+    }, [formData.idPais]);
 
-    // Estado para as áreas selecionadas na verificação
-    const [selectedVerificationAreas, setSelectedVerificationAreas] = useState<number[]>([]);
+    // Load Cidades when Estado changes (Mock Logic)
+    useEffect(() => {
+        if (formData.idEstado) {
+            const filtered = mockCidades.filter(c => String(c.idEstado) === String(formData.idEstado));
+            setFilteredCidades(filtered);
+        } else {
+            setFilteredCidades([]);
+        }
+    }, [formData.idEstado]);
 
-    const [updates, setUpdates] = useState<any[]>([]);
-    const [newUpdateDate, setNewUpdateDate] = useState('');
-    const [newUpdateDescription, setNewUpdateDescription] = useState('');
-
-    // Populate form if editing (Initial Data)
+    // Populate form if editing
     useEffect(() => {
         if (initialData) {
             setFormData({
@@ -74,89 +81,14 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                 idIcmra: initialData.idIcmra ? String(initialData.idIcmra) : '',
                 tipoEncaminhamento: initialData.tipoEncaminhamento || ''
             });
-            
-            if (initialData.tags) {
-                setTags(initialData.tags);
-            }
         }
     }, [initialData]);
-
-    // Filtragem em Cascata (Efeito)
-    useEffect(() => {
-        if (formData.idPais) {
-            const estadosDoPais = allEstadosList.filter(e => e.idPais === Number(formData.idPais));
-            setFilteredEstados(estadosDoPais);
-        } else {
-            setFilteredEstados([]);
-        }
-    }, [formData.idPais, allEstadosList]);
-
-    useEffect(() => {
-        if (formData.idEstado) {
-            const cidadesDoEstado = allCidadesList.filter(c => c.idEstado === Number(formData.idEstado));
-            setFilteredCidades(cidadesDoEstado);
-        } else {
-            setFilteredCidades([]);
-        }
-    }, [formData.idEstado, allCidadesList]);
-
-
-    // Efeito para sugerir áreas baseadas na Natureza selecionada
-    useEffect(() => {
-        const natureId = Number(formData.idNatureza);
-        if (natureId) {
-            const relatedAreas = areas
-                .filter(a => a.naturezaIds && a.naturezaIds.includes(natureId))
-                .map(a => a.id);
-            
-            setSelectedVerificationAreas(prev => {
-                const combined = new Set([...prev, ...relatedAreas]);
-                return Array.from(combined);
-            });
-        }
-    }, [formData.idNatureza]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
 
-    // --- Handlers para Criação Dinâmica ---
-
-    const handleCreatePais = (nome: string) => {
-        const newId = Date.now();
-        const novoPais = { id: newId, nome };
-        setPaisesList(prev => [...prev, novoPais]);
-        // Atualiza formulário e limpa filhos
-        setFormData(prev => ({ ...prev, idPais: String(newId), idEstado: '', idCidade: '' }));
-        alert(`País "${nome}" adicionado com sucesso!`);
-    };
-
-    const handleCreateEstado = (nome: string) => {
-        if (!formData.idPais) {
-            alert("Selecione um país primeiro.");
-            return;
-        }
-        const newId = Date.now();
-        const novoEstado = { id: newId, nome, idPais: Number(formData.idPais) };
-        setAllEstadosList(prev => [...prev, novoEstado]);
-        setFormData(prev => ({ ...prev, idEstado: String(newId), idCidade: '' }));
-        alert(`Estado "${nome}" adicionado com sucesso!`);
-    };
-
-    const handleCreateCidade = (nome: string) => {
-        if (!formData.idEstado) {
-            alert("Selecione um estado primeiro.");
-            return;
-        }
-        const newId = Date.now();
-        const novaCidade = { id: newId, nome, idEstado: Number(formData.idEstado) };
-        setAllCidadesList(prev => [...prev, novaCidade]);
-        setFormData(prev => ({ ...prev, idCidade: String(newId) }));
-        alert(`Cidade "${nome}" adicionada com sucesso!`);
-    };
-
-    // Handlers para seleção nos componentes customizados
     const handleSelectPais = (val: string | number) => {
         setFormData(prev => ({ ...prev, idPais: String(val), idEstado: '', idCidade: '' }));
     };
@@ -167,79 +99,20 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
         setFormData(prev => ({ ...prev, idCidade: String(val) }));
     };
 
-    
-    // TAGS Logic
-    const handleAddTag = (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.type === 'keydown' && (e as React.KeyboardEvent).key !== 'Enter') return;
-        
-        e.preventDefault();
-        const newTag = tagInput.trim();
-        if (newTag && !tags.includes(newTag)) {
-            setTags([...tags, newTag]);
-            setTagInput('');
-        }
-    };
-
-    const handleRemoveTag = (tagToRemove: string) => {
-        setTags(tags.filter(tag => tag !== tagToRemove));
-    };
-
-    const handleVerificationChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { id, value, type } = e.target;
-        if (type === 'checkbox') {
-             const isChecked = (e.target as HTMLInputElement).checked;
-             const today = new Date().toISOString().split('T')[0];
-             setVerification(prev => ({
-                 ...prev,
-                 duplaVerificacao: isChecked,
-                 dataVerificacao: isChecked ? today : ''
-             }));
-        } else {
-            setVerification(prev => ({ ...prev, [id]: value }));
-        }
-    }
-
-    const toggleVerificationArea = (areaId: number) => {
-        setSelectedVerificationAreas(prev => 
-            prev.includes(areaId) 
-                ? prev.filter(id => id !== areaId) 
-                : [...prev, areaId]
-        );
-    };
-
-    const handleAddUpdate = () => {
-        if (newUpdateDate && newUpdateDescription) {
-            setUpdates([...updates, {
-                id: Date.now(),
-                date: newUpdateDate,
-                description: newUpdateDescription,
-            }]);
-            setNewUpdateDate('');
-            setNewUpdateDescription('');
-        } else {
-            alert('Por favor, preencha a data e a descrição da atualização.');
-        }
-    };
-
-    const handleSaveVerificationOnly = () => {
-        const areasNames = areas.filter(a => selectedVerificationAreas.includes(a.id)).map(a => a.sigla).join(', ');
-        alert(`Dados de verificação salvos!\nÁreas envolvidas: ${areasNames || 'Nenhuma'}`);
-    };
-
-    const handleSaveUpdatesOnly = () => {
-        alert('Histórico de atualizações salvo com sucesso! (Simulação)');
-    };
+    const handleCreatePais = (nome: string) => alert("Criação de país via frontend desabilitada nesta versão.");
+    const handleCreateEstado = (nome: string) => alert("Criação de estado via frontend desabilitada nesta versão.");
+    const handleCreateCidade = (nome: string) => alert("Criação de cidade via frontend desabilitada nesta versão.");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
 
+        // Simulation
         setTimeout(() => {
             setSaving(false);
-            const fakeId = editingId ? Number(editingId) : Date.now();
-            console.log('Saved with tags:', tags);
-            alert('Rumor/Evento salvo com sucesso! (Simulação de Banco de Dados)');
-            onSave(fakeId);
+            alert('Monitoramento salvo com sucesso! (Modo Demonstração - Dados não persistidos no servidor)');
+            // Retorna um ID falso para continuar o fluxo
+            onSave(12345);
         }, 1000);
     };
 
@@ -302,11 +175,11 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                 <FormField label="ICMRA" id="idIcmra">
                     <Select id="idIcmra" value={formData.idIcmra} onChange={handleChange}>
                         <option value="">Selecione ICMRA...</option>
-                        {icmrasList.map(i => <option key={i.id} value={i.descricao}>{i.descricao}</option>)}
+                        {icmrasList.map(i => <option key={i.id} value={i.id}>{i.descricao}</option>)}
                     </Select>
                 </FormField>
                 
-                {/* GEOGRAFIA com CreatableSelect */}
+                {/* GEOGRAFIA com CreatableSelect (Modo Seleção) */}
                 <FormField label="País" id="idPais">
                     <CreatableSelect
                         id="idPais"
@@ -314,7 +187,7 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                         options={paisesList}
                         onChange={handleSelectPais}
                         onCreate={handleCreatePais}
-                        placeholder="Pesquisar ou Adicionar País..."
+                        placeholder="Pesquisar País..."
                     />
                 </FormField>
                 <FormField label="Estado" id="idEstado">
@@ -324,7 +197,7 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                         options={filteredEstados}
                         onChange={handleSelectEstado}
                         onCreate={handleCreateEstado}
-                        placeholder="Pesquisar ou Adicionar Estado..."
+                        placeholder="Pesquisar Estado..."
                         disabled={!formData.idPais}
                     />
                 </FormField>
@@ -335,170 +208,16 @@ const RumorEventoForm: React.FC<RumorEventoFormProps> = ({ onBack, onSave, editi
                         options={filteredCidades}
                         onChange={handleSelectCidade}
                         onCreate={handleCreateCidade}
-                        placeholder="Pesquisar ou Adicionar Cidade..."
+                        placeholder="Pesquisar Cidade..."
                         disabled={!formData.idEstado}
                     />
                 </FormField>
             </div>
             
-            {/* TAGS Field */}
-            <div className="w-full">
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags (Palavras-chave)</label>
-                <div className="flex gap-2 mb-2">
-                    <Input 
-                        type="text" 
-                        id="tags" 
-                        value={tagInput} 
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleAddTag} 
-                        placeholder="Digite uma tag e pressione Enter" 
-                        className="flex-grow"
-                    />
-                    <button 
-                        type="button" 
-                        onClick={handleAddTag}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                        Adicionar
-                    </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, index) => (
-                        <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {tag}
-                            <button 
-                                type="button" 
-                                onClick={() => handleRemoveTag(tag)}
-                                className="ml-2 inline-flex items-center justify-center p-0.5 rounded-full text-blue-600 hover:bg-blue-200 hover:text-blue-900 focus:outline-none"
-                            >
-                                <XMarkIcon className="h-4 w-4" />
-                            </button>
-                        </span>
-                    ))}
-                    {tags.length === 0 && <span className="text-gray-400 text-sm italic">Nenhuma tag adicionada.</span>}
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField label="Descrição" id="descricao"><Textarea id="descricao" placeholder="Detalhes sobre o rumor/evento..." value={formData.descricao} onChange={handleChange} maxLength={500} /></FormField>
                 <FormField label="Fundamento da Veracidade" id="fundamentoVeracidade"><Textarea id="fundamentoVeracidade" placeholder="Justificativa para a veracidade..." value={formData.fundamentoVeracidade} onChange={handleChange} maxLength={255} /></FormField>
             </div>
-
-            {/* Sections only visible when editing */}
-            {editingId && (
-                <>
-                    {/* Updates Section */}
-                    <div className="pt-8 mt-8 border-t border-gray-200">
-                        <div className="flex justify-between items-center mb-4">
-                             <h3 className="text-xl font-bold text-gray-800">Atualizações do Monitoramento</h3>
-                             <button 
-                                type="button" 
-                                onClick={handleSaveUpdatesOnly}
-                                className="bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors"
-                             >
-                                 Salvar Atualizações
-                             </button>
-                        </div>
-                        
-                        <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
-                            {updates.length > 0 ? updates.map(update => (
-                                <div key={update.id} className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                                    <p className="text-sm font-semibold text-gray-700">{new Date(update.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-                                    <p className="mt-1 text-sm text-gray-600">{update.description}</p>
-                                </div>
-                            )) : <p className="text-gray-500 text-sm">Nenhuma atualização registrada.</p>}
-                        </div>
-                        <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-white">
-                            <h4 className="text-lg font-semibold text-gray-700">Adicionar Nova Atualização</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="md:col-span-1"><FormField label="Data" id="update-date"><Input type="date" id="update-date" value={newUpdateDate} onChange={e => setNewUpdateDate(e.target.value)} /></FormField></div>
-                                <div className="md:col-span-2"><FormField label="Descrição da Atualização" id="update-description"><Textarea id="update-description" value={newUpdateDescription} onChange={e => setNewUpdateDescription(e.target.value)} placeholder="Descreva o que aconteceu..." rows={3} maxLength={500} /></FormField></div>
-                            </div>
-                            <div className="flex justify-end">
-                                <button type="button" onClick={handleAddUpdate} className="bg-green-600 text-white px-4 py-2 text-sm rounded-md hover:bg-green-700">Adicionar à Lista</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Verification Section */}
-                    <div className="pt-8 mt-8 border-t border-gray-200">
-                        <div className="flex justify-between items-center mb-4">
-                             <h3 className="text-xl font-bold text-gray-800">Verificação de Dados</h3>
-                             <button 
-                                type="button" 
-                                onClick={handleSaveVerificationOnly}
-                                className="bg-indigo-600 text-white px-4 py-2 text-sm rounded-md hover:bg-indigo-700 transition-colors"
-                             >
-                                 Salvar Verificação
-                             </button>
-                        </div>
-                        <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-100 space-y-6">
-                            <div className="flex items-center space-x-3">
-                                <input
-                                    type="checkbox"
-                                    id="duplaVerificacao"
-                                    checked={verification.duplaVerificacao}
-                                    onChange={handleVerificationChange}
-                                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                />
-                                <label htmlFor="duplaVerificacao" className="text-sm font-medium text-gray-700 select-none cursor-pointer">
-                                    Dupla Verificação Realizada
-                                </label>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Data da Verificação" id="dataVerificacao">
-                                    <Input
-                                        type="date"
-                                        id="dataVerificacao"
-                                        value={verification.dataVerificacao}
-                                        disabled
-                                    />
-                                </FormField>
-                                <div className="md:col-span-2">
-                                    <FormField label="Observação sobre a Verificação" id="observacaoVerificacao">
-                                        <Textarea
-                                            id="observacaoVerificacao"
-                                            value={verification.observacaoVerificacao}
-                                            onChange={handleVerificationChange}
-                                            placeholder="Insira observações sobre o processo de verificação..."
-                                            maxLength={500}
-                                        />
-                                    </FormField>
-                                </div>
-                            </div>
-
-                            {/* Seleção de Áreas para Verificação */}
-                            <div className="mt-4 pt-4 border-t border-indigo-200">
-                                <label className="block text-sm font-bold text-indigo-900 mb-3">Áreas Envolvidas na Verificação</label>
-                                <p className="text-xs text-indigo-700 mb-3">
-                                    Áreas marcadas com * são sugeridas automaticamente com base na natureza do evento. Você pode adicionar ou remover áreas conforme necessário.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 bg-white p-4 rounded-md border border-indigo-100 max-h-48 overflow-y-auto">
-                                    {areas.map((area) => {
-                                        const isRelated = area.naturezaIds && area.naturezaIds.includes(Number(formData.idNatureza));
-                                        return (
-                                            <label key={area.id} className={`flex items-center space-x-2 cursor-pointer p-2 rounded border transition-colors ${selectedVerificationAreas.includes(area.id) ? 'bg-indigo-100 border-indigo-300' : 'hover:bg-gray-50 border-transparent'}`}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedVerificationAreas.includes(area.id)}
-                                                    onChange={() => toggleVerificationArea(area.id)}
-                                                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 border-gray-300"
-                                                />
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm text-gray-800 font-medium">{area.sigla}</span>
-                                                    <span className="text-xs text-gray-500">{area.nome} {isRelated && <span className="text-indigo-600 font-bold">*</span>}</span>
-                                                </div>
-                                            </label>
-                                        );
-                                    })}
-                                    {areas.length === 0 && <span className="text-sm text-gray-500">Nenhuma área cadastrada.</span>}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
 
             <div className="flex justify-end pt-8 gap-3 border-t border-gray-200">
                 <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">Voltar</button>

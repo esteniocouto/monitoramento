@@ -32,10 +32,11 @@
 
     <div class="meta-info">
         <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
-        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>1.2.0</span></div>
+        <div class="meta-row"><span class="meta-label">Versão do Documento:</span> <span>2.0.0 (Padrão ANVISA)</span></div>
         <div class="meta-row"><span class="meta-label">Data de Emissão:</span> <span>19/11/2025</span></div>
         <div class="meta-row"><span class="meta-label">Responsável Técnico:</span> <span>ESTÊNIO COUTO BORGES JÚNIOR</span></div>
         <div class="meta-row"><span class="meta-label">SGBD:</span> <span>Microsoft SQL Server 2019+</span></div>
+        <div class="meta-row"><span class="meta-label">Padrão:</span> <span>MAD_AN_04</span></div>
     </div>
 
     <div class="toc">
@@ -64,314 +65,398 @@
                 <td>Criação inicial do documento.</td>
             </tr>
             <tr>
-                <td>1.1.0</td>
-                <td>19/11/2025</td>
+                <td>2.0.0</td>
+                <td>11/12/2025</td>
                 <td>Estênio Couto Borges Júnior</td>
-                <td>Inclusão de todas as tabelas (Comunicação, Atualização, Áreas).</td>
-            </tr>
-            <tr>
-                <td>1.2.0</td>
-                <td>19/11/2025</td>
-                <td>Estênio Couto Borges Júnior</td>
-                <td>Detalhamento das tabelas geográficas (PAIS, ESTADO, CIDADE) para suporte a cadastro dinâmico.</td>
+                <td>Refatoração completa para o padrão de nomenclatura ANVISA (TB, DM, FT, RL).</td>
             </tr>
         </tbody>
     </table>
 
     <h2 id="modelo-fisico">2. Modelo Físico (Script SQL Server Completo)</h2>
-    <p>Abaixo encontra-se o script DDL completo para a criação da estrutura do banco de dados.</p>
+    <p>Abaixo encontra-se o script DDL completo para a criação da estrutura do banco de dados, seguindo o padrão <strong>MAD_AN_04</strong>.</p>
 
 <pre>
-USE [master]
-GO
-CREATE DATABASE [SIMRECEAVS]
-GO
-USE [SIMRECEAVS]
+/*
+ * SCRIPT DE CRIAÇÃO DE BANCO DE DADOS - PADRÃO ANVISA (MAD_AN_04)
+ * BANCO: DBCEAVSSIMRE
+ * DATA: 11/12/2025
+ */
+
+CREATE DATABASE DBCEAVSSIMRE;
 GO
 
--- Tabela de Usuários
-CREATE TABLE [dbo].[LOGIN](
-    [ID_LOGIN] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [NOME] [varchar](100) NOT NULL,
-    [EMAIL] [varchar](100) NOT NULL UNIQUE,
-    [LOGIN] [varchar](50) NOT NULL UNIQUE,
-    [SENHA] [varchar](100) NOT NULL, -- Hash BCrypt
-    [PERFIL] [varchar](20) DEFAULT 'USER' NOT NULL,
-    [INATIVO] [bit] DEFAULT 0,
-    [DATA_CRIACAO] [datetime] DEFAULT GETDATE()
-)
+USE DBCEAVSSIMRE;
 GO
 
--- Tabelas de Domínio e Geografia
-CREATE TABLE [dbo].[STATUS](
-    [ID_STATUS] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [NOME] [varchar](50) NOT NULL,
-    [DESCRICAO] [varchar](150) NULL,
-    [COR] [varchar](20) NULL
-)
-GO
+/* ==================================================================================
+   1. TABELAS DE SEGURANÇA E ACESSO
+   ================================================================================== */
 
-CREATE TABLE [dbo].[NATUREZA](
-    [ID_NATUREZA] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [DESCRICAO_NATUREZA] [varchar](150) NOT NULL
-)
-GO
-
--- Tabelas Geográficas
-CREATE TABLE [dbo].[PAIS] ( 
-    [ID_PAIS] int IDENTITY(1,1) PRIMARY KEY, 
-    [NOME] varchar(100) NOT NULL UNIQUE 
+-- Tabela:  TB_LOGIN
+CREATE TABLE TB_LOGIN (
+    CO_SEQ_LOGIN    INT IDENTITY(1,1) NOT NULL,
+    NO_USUARIO      VARCHAR(100) NOT NULL,
+    DS_EMAIL        VARCHAR(50) NOT NULL,
+    CO_LOGIN        VARCHAR(30) NOT NULL,
+    TX_SENHA        VARCHAR(100) NOT NULL, 
+    NO_PERFIL       VARCHAR(20) NOT NULL,
+    ST_INATIVO      BIT DEFAULT 0,
+    DH_S_CRIACAO    DATETIME DEFAULT GETDATE(),
+    CONSTRAINT PK_LOGIN PRIMARY KEY (CO_SEQ_LOGIN),
+    CONSTRAINT UC_LOGIN_EMAIL UNIQUE (DS_EMAIL),
+    CONSTRAINT UC_LOGIN_LOGIN UNIQUE (CO_LOGIN)
 );
+GO
 
-CREATE TABLE [dbo].[ESTADO] ( 
-    [ID_ESTADO] int IDENTITY(1,1) PRIMARY KEY, 
-    [NOME] varchar(50) NOT NULL, 
-    [ID_PAIS] int NOT NULL FOREIGN KEY REFERENCES PAIS(ID_PAIS) 
+/* ==================================================================================
+   2. TABELAS DIMENSÃO (DOMÍNIOS)
+   ================================================================================== */
+
+-- Tabela: DM_STATUS
+CREATE TABLE DM_STATUS (
+    CO_SEQ_STATUS   INT IDENTITY(1,1) NOT NULL,
+    NO_STATUS       VARCHAR(50) NOT NULL,
+    DS_DESCRICAO    VARCHAR(150),
+    DS_COR          VARCHAR(20),
+    CONSTRAINT PK_STATUS PRIMARY KEY (CO_SEQ_STATUS)
 );
+GO
 
-CREATE TABLE [dbo].[CIDADE] ( 
-    [ID_CIDADE] int IDENTITY(1,1) PRIMARY KEY, 
-    [NOME] varchar(100) NOT NULL, 
-    [ID_ESTADO] int NOT NULL FOREIGN KEY REFERENCES ESTADO(ID_ESTADO) 
+-- Tabela: DM_NATUREZA
+CREATE TABLE DM_NATUREZA (
+    CO_SEQ_NATUREZA INT IDENTITY(1,1) NOT NULL,
+    DS_NATUREZA     VARCHAR(50) NOT NULL,
+    CONSTRAINT PK_NATUR PRIMARY KEY (CO_SEQ_NATUREZA)
 );
-
-CREATE TABLE [dbo].[ICMRA] ( [ID_ICMRA] int IDENTITY(1,1) PRIMARY KEY, [DESCRICAO] varchar(255) );
-
--- Tabelas Organizacionais
-CREATE TABLE [dbo].[AREA](
-    [ID_AREA] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [NOME_AREA] [varchar](30) NOT NULL,
-    [SIGLA] [nvarchar](10) NULL,
-    [DESCRICAO] [varchar](150) NULL
-)
 GO
 
-CREATE TABLE [dbo].[REPRESENTANTE](
-    [ID_REPRESENTANTE] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [ID_AREA] [int] NULL FOREIGN KEY REFERENCES [dbo].[AREA]([ID_AREA]),
-    [EMAIL] [varchar](100) NULL,
-    [NOME] [varchar](30) NULL,
-    [TITULARIDADE] [varchar](15) NULL
-)
+-- Tabela: DM_PAIS
+CREATE TABLE DM_PAIS (
+    CO_SEQ_PAIS     INT IDENTITY(1,1) NOT NULL,
+    NO_PAIS         VARCHAR(100) NOT NULL,
+    CONSTRAINT PK_PAIS PRIMARY KEY (CO_SEQ_PAIS)
+);
 GO
 
--- Tabelas Associativas
-CREATE TABLE [dbo].[NATUREZA_AREA](
-    [ID_AREA] [int] NULL FOREIGN KEY REFERENCES [dbo].[AREA]([ID_AREA]),
-    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA])
-)
+-- Tabela: DM_ESTADO
+CREATE TABLE DM_ESTADO (
+    CO_SEQ_ESTADO   INT IDENTITY(1,1) NOT NULL,
+    NO_ESTADO       VARCHAR(50) NOT NULL,
+    CO_SEQ_PAIS     INT NOT NULL,
+    CONSTRAINT PK_ESTAD PRIMARY KEY (CO_SEQ_ESTADO)
+);
 GO
 
-CREATE TABLE [dbo].[ICMRA_NATUREZA](
-    [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
-    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA])
-)
+-- Tabela: DM_CIDADE
+CREATE TABLE DM_CIDADE (
+    CO_SEQ_CIDADE   INT IDENTITY(1,1) NOT NULL,
+    NO_CIDADE       VARCHAR(100) NOT NULL,
+    CO_SEQ_ESTADO   INT NOT NULL,
+    CONSTRAINT PK_CIDAD PRIMARY KEY (CO_SEQ_CIDADE)
+);
 GO
 
--- Tabela Principal: RUMOR_EVENTO
-CREATE TABLE [dbo].[RUMOR_EVENTO](
-    [ID_RUMOR_EVENTO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [IDU] [varchar](20) NULL,
-    [TITULO] [varchar](255) NOT NULL,
-    [DESCRICAO] [varchar](500) NULL,
-    [LOCAL_EVENTO] [varchar](100) NULL,
-    [VERACIDADE] [varchar](50) NULL,
-    [FUNDAMENTO_VERACIDADE] [varchar](255) NULL,
-    [NOTIFICADOR_FONTE] [varchar](100) NULL,
-    [DATA_RECEBIMENTO] [date] NULL,
-    [TIPO_VIGILANCIA] [varchar](50) NULL,
-    [TIPO_ENCAMINHAMENTO] [varchar](50) NULL,
-    [NIVEL_CONFIANCA] [varchar](50) NULL,
+-- Tabela: DM_ICMRA
+CREATE TABLE DM_ICMRA (
+    CO_SEQ_ICMRA    INT IDENTITY(1,1) NOT NULL,
+    DS_DESCRICAO    VARCHAR(255),
+    CONSTRAINT PK_ICMRA PRIMARY KEY (CO_SEQ_ICMRA)
+);
+GO
+
+-- Tabela: DM_AREA
+CREATE TABLE DM_AREA (
+    CO_SEQ_AREA     INT IDENTITY(1,1) NOT NULL,
+    NO_AREA         VARCHAR(30) NOT NULL,
+    SG_AREA         NVARCHAR(10),
+    DS_DESCRICAO    VARCHAR(150),
+    CONSTRAINT PK_AREA PRIMARY KEY (CO_SEQ_AREA)
+);
+GO
+
+-- Tabela: DM_TAG
+CREATE TABLE DM_TAG (
+    CO_SEQ_TAG      INT IDENTITY(1,1) NOT NULL,
+    NO_TAG          VARCHAR(50) NOT NULL,
+    CONSTRAINT PK_TAG PRIMARY KEY (CO_SEQ_TAG)
+);
+GO
+
+-- Tabela: DM_LOCAL_EVENTO
+CREATE TABLE DM_LOCAL_EVENTO (
+    CO_SEQ_LOCAL_EVENTO INT IDENTITY(1,1) NOT NULL,
+    DS_LOCAL_EVENTO     VARCHAR(100), 
+    CONSTRAINT PK_LOCEV PRIMARY KEY (CO_SEQ_LOCAL_EVENTO)
+);
+GO
+
+-- Tabela: DM_REPRESENTANTE
+CREATE TABLE DM_REPRESENTANTE (
+    CO_SEQ_REPRESENTANTE INT IDENTITY(1,1) NOT NULL,
+    CO_SEQ_AREA          INT,
+    DS_EMAIL             VARCHAR(50),
+    NO_REPRESENTANTE     VARCHAR(50),
+    DS_TITULARIDADE      VARCHAR(10),
+    CONSTRAINT PK_REPRE PRIMARY KEY (CO_SEQ_REPRESENTANTE)
+);
+GO
+
+/* ==================================================================================
+   3. TABELAS ASSOCIATIVAS (RELAÇÕES N:N)
+   ================================================================================== */
+
+-- Tabela: RL_NATUREZA_AREA
+CREATE TABLE RL_NATUREZA_AREA (
+    CO_SEQ_AREA     INT NOT NULL,
+    CO_SEQ_NATUREZA INT NOT NULL,
+    CONSTRAINT PK_NATARE PRIMARY KEY (CO_SEQ_AREA, CO_SEQ_NATUREZA)
+);
+GO
+
+-- Tabela: RL_ICMRA_NATUREZA
+CREATE TABLE RL_ICMRA_NATUREZA (
+    CO_SEQ_ICMRA    INT NOT NULL,
+    CO_SEQ_NATUREZA INT NOT NULL,
+    CONSTRAINT PK_ICMNAT PRIMARY KEY (CO_SEQ_ICMRA, CO_SEQ_NATUREZA)
+);
+GO
+
+/* ==================================================================================
+   4. TABELAS FATO E TRANSACIONAIS (CORE BUSINESS)
+   ================================================================================== */
+
+-- Tabela: FT_RUMOR_EVENTO
+CREATE TABLE FT_RUMOR_EVENTO (
+    CO_SEQ_RUMOR        INT IDENTITY(1,1) NOT NULL,
+    CO_IDU              VARCHAR(20),
+    NO_TITULO           VARCHAR(200) NOT NULL,
+    TX_DESCRICAO        VARCHAR(500),
+    ST_VERACIDADE       VARCHAR(10),
+    DS_FUNDAMENTO_VERACIDADE VARCHAR(300),
+    NO_NOTIFICADOR_FONTE VARCHAR(100),
+    DT_RECEBIMENTO      DATE,
+    NO_TIPO_VIGILANCIA  VARCHAR(10),
+    DS_TIPO_ENCAMINHAMENTO VARCHAR(30),
+    DS_NIVEL_CONFIANCA  VARCHAR(50),
     
-    [ID_STATUS] [int] NULL FOREIGN KEY REFERENCES [dbo].[STATUS]([ID_STATUS]),
-    [ID_NATUREZA] [int] NULL FOREIGN KEY REFERENCES [dbo].[NATUREZA]([ID_NATUREZA]),
-    [ID_ICMRA] [int] NULL FOREIGN KEY REFERENCES [dbo].[ICMRA]([ID_ICMRA]),
+    -- Foreign Keys Colunas
+    CO_SEQ_STATUS       INT,
+    CO_SEQ_NATUREZA     INT,
+    CO_SEQ_ICMRA        INT,
+    CO_SEQ_PAIS         INT,
+    CO_SEQ_ESTADO       INT,
+    CO_SEQ_CIDADE       INT,
+    CO_SEQ_USUARIO_CADASTRO INT,
+    CO_SEQ_LOCAL_EVENTO INT,
+    DH_S_CADASTRO       DATETIME,
     
-    -- Geografia vinculada
-    [ID_PAIS] [int] NULL FOREIGN KEY REFERENCES [dbo].[PAIS]([ID_PAIS]),
-    [ID_ESTADO] [int] NULL FOREIGN KEY REFERENCES [dbo].[ESTADO]([ID_ESTADO]),
-    [ID_CIDADE] [int] NULL FOREIGN KEY REFERENCES [dbo].[CIDADE]([ID_CIDADE]),
-    
-    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
-    [DATA_CADASTRO] [datetime] DEFAULT GETDATE()
-)
+    CONSTRAINT PK_RUMOR PRIMARY KEY (CO_SEQ_RUMOR)
+);
 GO
 
--- Comunicação de Risco
-CREATE TABLE [dbo].[COMUNICACAO](
-    [ID_COMUNICACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [DATA_EMAIL] [date] NULL,
-    [ACAO] [varchar](100) NULL,
-    [CNPJ] [varchar](20) NULL,
-    [CATEGORIA] [varchar](100) NULL,
-    [ESCOPO] [varchar](100) NULL,
-    [PRODUTO] [varchar](100) NULL,
-    [LOTE] [varchar](50) NULL,
-    [NOME_EMPRESA] [varchar](100) NULL,
-    [RESOLUCAO] [varchar](100) NULL,
-    [URL] [varchar](255) NULL,
-    [DATA_DOU] [date] NULL,
-    [MOTIVO] [varchar](255) NULL,
-    [EMAIL_NOTIFICADOR] [varchar](100) NULL,
-    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN]),
-    [DATA_CADASTRO] [datetime] DEFAULT GETDATE()
-)
+-- Tabela Associativa: RL_RUMOR_TAG
+CREATE TABLE RL_RUMOR_TAG (
+    CO_SEQ_RUMOR    INT NOT NULL,
+    CO_SEQ_TAG      INT NOT NULL,
+    CONSTRAINT PK_RUMTAG PRIMARY KEY (CO_SEQ_RUMOR, CO_SEQ_TAG)
+);
 GO
 
--- Atualizações
-CREATE TABLE [dbo].[ATUALIZACAO](
-    [ID_ATUALIZACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [ID_RUMOR_EVENTO] [int] NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
-    [DESCRICAO_ATUALIZACAO] [varchar](500) NULL,
-    [DATA_ATUALIZACAO] [datetime] DEFAULT GETDATE(),
-    [ID_USUARIO_CADASTRO] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN])
-)
+-- Tabela: FT_COMUNICACAO
+CREATE TABLE FT_COMUNICACAO (
+    CO_SEQ_COMUNICACAO INT IDENTITY(1,1) NOT NULL,
+    DT_EMAIL           DATE,
+    DS_ACAO            VARCHAR(100),
+    NU_CNPJ            VARCHAR(20),
+    DS_CATEGORIA       VARCHAR(100),
+    DS_ESCOPO          VARCHAR(100),
+    NO_PRODUTO         VARCHAR(100),
+    CO_LOTE            VARCHAR(50),
+    NO_EMPRESA         VARCHAR(100),
+    DS_RESOLUCAO       VARCHAR(100),
+    DS_URL             VARCHAR(255),
+    DT_DOU             DATE,
+    DS_MOTIVO          VARCHAR(255),
+    DS_EMAIL_NOTIFICADOR VARCHAR(100),
+    CO_SEQ_USUARIO_CADASTRO INT,
+    DH_S_CADASTRO      DATETIME,
+    CONSTRAINT PK_COMUN PRIMARY KEY (CO_SEQ_COMUNICACAO)
+);
 GO
 
--- Tags (Many-to-Many)
-CREATE TABLE [dbo].[TAG](
-    [ID_TAG] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [NOME_TAG] [varchar](50) NOT NULL UNIQUE
-)
+-- Tabela: TB_ATUALIZACAO (Histórico de alterações do Rumor)
+CREATE TABLE TB_ATUALIZACAO (
+    CO_SEQ_ATUALIZACAO  INT IDENTITY(1,1) NOT NULL,
+    CO_SEQ_RUMOR        INT,
+    DS_ATUALIZACAO      VARCHAR(500),
+    DH_S_ATUALIZACAO    DATETIME,
+    CO_SEQ_USUARIO_CADASTRO INT,
+    CONSTRAINT PK_ATUAL PRIMARY KEY (CO_SEQ_ATUALIZACAO)
+);
 GO
 
-CREATE TABLE [dbo].[RUMOR_TAG](
-    [ID_RUMOR_EVENTO] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
-    [ID_TAG] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[TAG]([ID_TAG]),
-    PRIMARY KEY ([ID_RUMOR_EVENTO], [ID_TAG])
-)
+-- Tabela: TB_RISCO (Extensão do Rumor)
+CREATE TABLE TB_RISCO (
+    CO_SEQ_RISCO        INT IDENTITY(1,1) NOT NULL,
+    CO_SEQ_RUMOR        INT,
+    NU_GRAVIDADE        INT,
+    NU_VULNERABILIDADE  INT,
+    NU_CAPACIDADE_ENFRENTAMENTO INT,
+    NU_FREQUENCIA       INT,
+    NU_PROBABILIDADE    INT,
+    VL_IMPACTO          DECIMAL(5,2),
+    NU_MATRIZ_RISCO     DECIMAL(5,2),
+    DS_RISCO_SAUDE      VARCHAR(500),
+    DS_RECOMENDACAO     VARCHAR(500),
+    ST_PAUTAR_CMA       BIT,
+    CONSTRAINT PK_RISCO PRIMARY KEY (CO_SEQ_RISCO)
+);
 GO
 
--- Avaliação de Risco (1:1)
-CREATE TABLE [dbo].[RISCO](
-    [ID_RISCO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [ID_RUMOR_EVENTO] [int] NOT NULL UNIQUE FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
-    [GRAVIDADE] [int] NULL,
-    [VULNERABILIDADE] [int] NULL,
-    [CAPACIDADE_ENFRENTAMENTO] [int] NULL,
-    [FREQUENCIA] [int] NULL,
-    [PROBABILIDADE] [int] NULL,
-    [IMPACTO] [decimal](5,2) NULL,
-    [MATRIZ_RISCO] [decimal](5,2) NULL,
-    [RISCO_SAUDE] [varchar](255) NULL,
-    [RECOMENDACAO] [varchar](255) NULL,
-    [PAUTADO_CMA] [bit] DEFAULT 0
-)
+-- Tabela: TB_VERIFICACAO (Controle de verificação)
+CREATE TABLE TB_VERIFICACAO (
+    CO_SEQ_VERIFICACAO  INT IDENTITY(1,1) NOT NULL,
+    CO_SEQ_RUMOR        INT,
+    ST_VERIFICADO       BIT,
+    DH_S_VERIFICACAO    DATETIME,
+    DS_OBSERVACAO       VARCHAR(500),
+    CO_SEQ_USUARIO_VERIFICADOR INT,
+    CONSTRAINT PK_VERIF PRIMARY KEY (CO_SEQ_VERIFICACAO)
+);
 GO
 
--- Verificação (1:1)
-CREATE TABLE [dbo].[VERIFICACAO](
-    [ID_VERIFICACAO] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [ID_RUMOR_EVENTO] [int] NOT NULL FOREIGN KEY REFERENCES [dbo].[RUMOR_EVENTO]([ID_RUMOR_EVENTO]),
-    [VERIFICADO] [bit] DEFAULT 0,
-    [DATA_VERIFICACAO] [date] NULL,
-    [OBSERVACAO] [varchar](500) NULL,
-    [ID_USUARIO_VERIFICADOR] [int] NULL FOREIGN KEY REFERENCES [dbo].[LOGIN]([ID_LOGIN])
-)
+/* ==================================================================================
+   5. TABELAS DE AUDITORIA (LOG)
+   ================================================================================== */
+
+-- Tabela: TL_LOG_AUDITORIA
+CREATE TABLE TL_LOG_AUDITORIA (
+    CO_SEQ_LOG          INT IDENTITY(1,1) NOT NULL,
+    CO_SEQ_USUARIO      INT,
+    NO_LOGIN_USUARIO    VARCHAR(100),
+    NO_TIPO_ACAO        VARCHAR(20) NOT NULL,
+    NO_TABELA_AFETADA   VARCHAR(50),
+    CO_REGISTRO_AFETADO VARCHAR(50),
+    TX_DADOS_ANTERIORES NVARCHAR(MAX),
+    TX_DADOS_NOVOS      NVARCHAR(MAX),
+    NU_IP_ORIGEM        VARCHAR(50),
+    DH_S_LOG            DATETIME DEFAULT GETDATE(),
+    CONSTRAINT PK_LOGAU PRIMARY KEY (CO_SEQ_LOG)
+);
+GO
+
+/* ==================================================================================
+   6. CRIAÇÃO DOS RELACIONAMENTOS (CONSTRAINTS FK)
+   ================================================================================== */
+-- FKs DM_ESTADO
+ALTER TABLE DM_ESTADO ADD CONSTRAINT FK_ESTAD_PAIS FOREIGN KEY (CO_SEQ_PAIS) REFERENCES DM_PAIS (CO_SEQ_PAIS);
+
+-- FKs DM_CIDADE
+ALTER TABLE DM_CIDADE ADD CONSTRAINT FK_CIDAD_ESTAD FOREIGN KEY (CO_SEQ_ESTADO) REFERENCES DM_ESTADO (CO_SEQ_ESTADO);
+
+-- FKs DM_REPRESENTANTE
+ALTER TABLE DM_REPRESENTANTE ADD CONSTRAINT FK_REPRE_AREA FOREIGN KEY (CO_SEQ_AREA) REFERENCES DM_AREA (CO_SEQ_AREA);
+
+-- FKs RL_NATUREZA_AREA
+ALTER TABLE RL_NATUREZA_AREA ADD CONSTRAINT FK_NATARE_AREA FOREIGN KEY (CO_SEQ_AREA) REFERENCES DM_AREA (CO_SEQ_AREA);
+ALTER TABLE RL_NATUREZA_AREA ADD CONSTRAINT FK_NATARE_NATUR FOREIGN KEY (CO_SEQ_NATUREZA) REFERENCES DM_NATUREZA (CO_SEQ_NATUREZA);
+
+-- FKs RL_ICMRA_NATUREZA
+ALTER TABLE RL_ICMRA_NATUREZA ADD CONSTRAINT FK_ICMNAT_ICMRA FOREIGN KEY (CO_SEQ_ICMRA) REFERENCES DM_ICMRA (CO_SEQ_ICMRA);
+ALTER TABLE RL_ICMRA_NATUREZA ADD CONSTRAINT FK_ICMNAT_NATUR FOREIGN KEY (CO_SEQ_NATUREZA) REFERENCES DM_NATUREZA (CO_SEQ_NATUREZA);
+
+-- FKs FT_RUMOR_EVENTO
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_STATUS FOREIGN KEY (CO_SEQ_STATUS) REFERENCES DM_STATUS (CO_SEQ_STATUS);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_NATUR FOREIGN KEY (CO_SEQ_NATUREZA) REFERENCES DM_NATUREZA (CO_SEQ_NATUREZA);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_ICMRA FOREIGN KEY (CO_SEQ_ICMRA) REFERENCES DM_ICMRA (CO_SEQ_ICMRA);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_PAIS FOREIGN KEY (CO_SEQ_PAIS) REFERENCES DM_PAIS (CO_SEQ_PAIS);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_ESTAD FOREIGN KEY (CO_SEQ_ESTADO) REFERENCES DM_ESTADO (CO_SEQ_ESTADO);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_CIDAD FOREIGN KEY (CO_SEQ_CIDADE) REFERENCES DM_CIDADE (CO_SEQ_CIDADE);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_LOCEV FOREIGN KEY (CO_SEQ_LOCAL_EVENTO) REFERENCES DM_LOCAL_EVENTO (CO_SEQ_LOCAL_EVENTO);
+ALTER TABLE FT_RUMOR_EVENTO ADD CONSTRAINT FK_RUMOR_LOGIN FOREIGN KEY (CO_SEQ_USUARIO_CADASTRO) REFERENCES TB_LOGIN (CO_SEQ_LOGIN);
+
+-- FKs RL_RUMOR_TAG
+ALTER TABLE RL_RUMOR_TAG ADD CONSTRAINT FK_RUMTAG_RUMOR FOREIGN KEY (CO_SEQ_RUMOR) REFERENCES FT_RUMOR_EVENTO (CO_SEQ_RUMOR);
+ALTER TABLE RL_RUMOR_TAG ADD CONSTRAINT FK_RUMTAG_TAG FOREIGN KEY (CO_SEQ_TAG) REFERENCES DM_TAG (CO_SEQ_TAG);
+
+-- FKs FT_COMUNICACAO
+ALTER TABLE FT_COMUNICACAO ADD CONSTRAINT FK_COMUN_LOGIN FOREIGN KEY (CO_SEQ_USUARIO_CADASTRO) REFERENCES TB_LOGIN (CO_SEQ_LOGIN);
+
+-- FKs TB_ATUALIZACAO
+ALTER TABLE TB_ATUALIZACAO ADD CONSTRAINT FK_ATUAL_RUMOR FOREIGN KEY (CO_SEQ_RUMOR) REFERENCES FT_RUMOR_EVENTO (CO_SEQ_RUMOR);
+ALTER TABLE TB_ATUALIZACAO ADD CONSTRAINT FK_ATUAL_LOGIN FOREIGN KEY (CO_SEQ_USUARIO_CADASTRO) REFERENCES TB_LOGIN (CO_SEQ_LOGIN);
+
+-- FKs TB_RISCO
+ALTER TABLE TB_RISCO ADD CONSTRAINT FK_RISCO_RUMOR FOREIGN KEY (CO_SEQ_RUMOR) REFERENCES FT_RUMOR_EVENTO (CO_SEQ_RUMOR);
+
+-- FKs TB_VERIFICACAO
+ALTER TABLE TB_VERIFICACAO ADD CONSTRAINT FK_VERIF_RUMOR FOREIGN KEY (CO_SEQ_RUMOR) REFERENCES FT_RUMOR_EVENTO (CO_SEQ_RUMOR);
+ALTER TABLE TB_VERIFICACAO ADD CONSTRAINT FK_VERIF_LOGIN FOREIGN KEY (CO_SEQ_USUARIO_VERIFICADOR) REFERENCES TB_LOGIN (CO_SEQ_LOGIN);
+
+-- FKs TL_LOG_AUDITORIA
+ALTER TABLE TL_LOG_AUDITORIA ADD CONSTRAINT FK_LOGAU_LOGIN FOREIGN KEY (CO_SEQ_USUARIO) REFERENCES TB_LOGIN (CO_SEQ_LOGIN);
 GO
 </pre>
 
     <h2 id="dicionario">3. Dicionário de Dados</h2>
 
-    <h3>3.1. Tabela: LOGIN</h3>
+    <h3>3.1. Tabela: TB_LOGIN</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_LOGIN</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID do usuário.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome completo.</td></tr>
-            <tr><td>LOGIN</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Username único.</td></tr>
-            <tr><td>SENHA</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Senha criptografada.</td></tr>
-            <tr><td>PERFIL</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>S</td><td>'ADMIN' ou 'USER'.</td></tr>
+            <tr><td>CO_SEQ_LOGIN</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador sequencial do usuário.</td></tr>
+            <tr><td>NO_USUARIO</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome completo do usuário.</td></tr>
+            <tr><td>CO_LOGIN</td><td>VARCHAR(30)</td><td>N</td><td>N</td><td>S</td><td>Login de acesso (username).</td></tr>
+            <tr><td>DS_EMAIL</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Email corporativo.</td></tr>
+            <tr><td>NO_PERFIL</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>S</td><td>Perfil de acesso (USER, ADMIN).</td></tr>
         </tbody>
     </table>
 
-    <h3>3.2. Tabela: RUMOR_EVENTO</h3>
+    <h3>3.2. Tabela: FT_RUMOR_EVENTO</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_RUMOR_EVENTO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador sequencial.</td></tr>
-            <tr><td>IDU</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>N</td><td>ID Temporal (DDMMYYYYHHmmss).</td></tr>
-            <tr><td>TITULO</td><td>VARCHAR(255)</td><td>N</td><td>N</td><td>S</td><td>Título do evento.</td></tr>
-            <tr><td>ID_STATUS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Status atual do evento.</td></tr>
-            <tr><td>ID_NATUREZA</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Classificação da natureza.</td></tr>
-            <tr><td>ID_PAIS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>País da ocorrência.</td></tr>
-            <tr><td>ID_ESTADO</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Estado da ocorrência.</td></tr>
-            <tr><td>ID_CIDADE</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Cidade da ocorrência.</td></tr>
+            <tr><td>CO_SEQ_RUMOR</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Chave primária do rumor/evento.</td></tr>
+            <tr><td>CO_IDU</td><td>VARCHAR(20)</td><td>N</td><td>N</td><td>N</td><td>Identificador Temporal Único.</td></tr>
+            <tr><td>NO_TITULO</td><td>VARCHAR(200)</td><td>N</td><td>N</td><td>S</td><td>Título do evento.</td></tr>
+            <tr><td>CO_SEQ_STATUS</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Status atual do evento (FK).</td></tr>
+            <tr><td>CO_SEQ_NATUREZA</td><td>INT</td><td>N</td><td>S</td><td>N</td><td>Natureza do evento (FK).</td></tr>
         </tbody>
     </table>
 
-    <h3>3.3. Tabela: PAIS</h3>
+    <h3>3.3. Tabela: DM_PAIS</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_PAIS</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do país.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome do país (ex: Brasil).</td></tr>
+            <tr><td>CO_SEQ_PAIS</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do país.</td></tr>
+            <tr><td>NO_PAIS</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome do país.</td></tr>
         </tbody>
     </table>
 
-    <h3>3.4. Tabela: ESTADO</h3>
+    <h3>3.4. Tabela: DM_ESTADO</h3>
     <table>
         <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_ESTADO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do estado.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Nome ou sigla (ex: DF).</td></tr>
-            <tr><td>ID_PAIS</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com a tabela PAIS.</td></tr>
+            <tr><td>CO_SEQ_ESTADO</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador do estado.</td></tr>
+            <tr><td>NO_ESTADO</td><td>VARCHAR(50)</td><td>N</td><td>N</td><td>S</td><td>Nome do estado.</td></tr>
+            <tr><td>CO_SEQ_PAIS</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com a tabela de Países.</td></tr>
         </tbody>
     </table>
 
-    <h3>3.5. Tabela: CIDADE</h3>
+    <h3>3.5. Tabela: TL_LOG_AUDITORIA</h3>
     <table>
-        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
+        <thead><tr><th>Atributo</th><th>Tipo</th><th>Descrição</th></tr></thead>
         <tbody>
-            <tr><td>ID_CIDADE</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>Identificador da cidade.</td></tr>
-            <tr><td>NOME</td><td>VARCHAR(100)</td><td>N</td><td>N</td><td>S</td><td>Nome da cidade (ex: Brasília).</td></tr>
-            <tr><td>ID_ESTADO</td><td>INT</td><td>N</td><td>S</td><td>S</td><td>Vínculo com a tabela ESTADO.</td></tr>
+            <tr><td>CO_SEQ_LOG</td><td>INT</td><td>Identificador único do log.</td></tr>
+            <tr><td>CO_SEQ_USUARIO</td><td>INT</td><td>ID do usuário que realizou a ação.</td></tr>
+            <tr><td>NO_TIPO_ACAO</td><td>VARCHAR</td><td>INSERT, UPDATE, DELETE, LOGIN.</td></tr>
+            <tr><td>TX_DADOS_ANTERIORES</td><td>NVARCHAR(MAX)</td><td>Snapshot dos dados antes da alteração (JSON).</td></tr>
+            <tr><td>TX_DADOS_NOVOS</td><td>NVARCHAR(MAX)</td><td>Snapshot dos dados após a alteração (JSON).</td></tr>
         </tbody>
     </table>
 
-    <!-- Demais tabelas mantidas conforme versão anterior -->
-    <h3>3.6. Tabela: AREA</h3>
-    <table>
-        <thead><tr><th>Atributo</th><th>Tipo</th><th>PK</th><th>FK</th><th>NN</th><th>Descrição</th></tr></thead>
-        <tbody>
-            <tr><td>ID_AREA</td><td>INT</td><td>S</td><td>N</td><td>S</td><td>ID da área técnica.</td></tr>
-            <tr><td>SIGLA</td><td>NVARCHAR(10)</td><td>N</td><td>N</td><td>N</td><td>Sigla (ex: GGTPS).</td></tr>
-            <tr><td>NOME_AREA</td><td>VARCHAR(30)</td><td>N</td><td>N</td><td>S</td><td>Nome completo da área.</td></tr>
-        </tbody>
-    </table>
-
-    <h2 id="dimensionamento">4. Dimensionamento e Volumetria (Base 50/mês)</h2>
-    <p>Estimativa de crescimento do banco de dados considerando a entrada de <strong>50 registros por mês</strong>.</p>
-
-    <ul>
-        <li><strong>Registros por Mês:</strong> 50</li>
-        <li><strong>Registros por Ano:</strong> 600</li>
-        <li><strong>Registros em 5 Anos:</strong> 3.000</li>
-    </ul>
-
-    <h3>Projeção de Armazenamento (5 Anos - 3.000 Registros)</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Tabela</th>
-                <th>Tamanho Médio Linha</th>
-                <th>Total Linhas (5 Anos)</th>
-                <th>Espaço Estimado</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td>RUMOR_EVENTO</td><td>~1.2 KB</td><td>3.000</td><td>~3.6 MB</td></tr>
-            <tr><td>RISCO</td><td>~0.1 KB</td><td>3.000</td><td>~0.3 MB</td></tr>
-            <tr><td>ATUALIZACAO (3x por evento)</td><td>~0.5 KB</td><td>9.000</td><td>~4.5 MB</td></tr>
-            <tr><td>COMUNICACAO</td><td>~0.8 KB</td><td>1.500 (Estimado)</td><td>~1.2 MB</td></tr>
-            <tr><td><strong>TOTAL (Dados)</strong></td><td>-</td><td>-</td><td><strong>~9.6 MB</strong></td></tr>
-        </tbody>
-    </table>
-    <p><em>Considerando índices e logs, o banco deve ocupar menos de <strong>20 MB</strong> em 5 anos, o que é extremamente leve para o SQL Server.</em></p>
-
-    <br><br>
-    <hr>
-    <p class="center" style="font-size: 0.8em; color: #777;">Documento gerado automaticamente para o projeto SIMRE-CEAVS.</p>
+    <!-- Demais tabelas seguem o padrão do script SQL acima -->
 
 </body>
 </html>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { naturezas as mockNaturezas, Natureza } from '../../data/mockData';
+
+import React, { useState, useEffect } from 'react';
+import { Natureza, naturezas as mockNaturezas } from '../../data/mockData';
 import { Input, FormField } from '../../components/forms/FormControls';
 import { PencilIcon, TrashIcon } from '../../components/icons/IconComponents';
 
@@ -36,17 +37,14 @@ const CadastroNatureza: React.FC = () => {
         setError('');
 
         if (editingId !== null) {
-            // Update
             setNaturezas(naturezas.map(n => n.id === editingId ? { ...n, descricao } : n));
         } else {
-            // Create
-            const newNatureza: Natureza = {
-                id: Date.now(), // simple unique id
-                descricao,
+            const newNat: Natureza = {
+                id: Date.now(),
+                descricao
             };
-            setNaturezas([...naturezas, newNatureza]);
+            setNaturezas([...naturezas, newNat]);
         }
-
         handleCancelEdit();
     };
 
@@ -116,11 +114,6 @@ const CadastroNatureza: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-                {naturezas.length === 0 && (
-                    <div className="text-center py-8">
-                        <p className="text-gray-500">Nenhuma natureza cadastrada.</p>
-                    </div>
-                )}
             </div>
         </div>
     );

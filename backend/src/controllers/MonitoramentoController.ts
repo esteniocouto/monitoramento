@@ -1,5 +1,7 @@
+
 import { Request, Response } from 'express';
 import { sql } from '../config/db';
+import { logAudit } from '../services/AuditService';
 
 // --- Rumor/Evento ---
 
@@ -14,6 +16,7 @@ export const getRumores = async (req: any, res: any) => {
             FROM RUMOR_EVENTO R
             LEFT JOIN STATUS S ON R.ID_STATUS = S.ID_STATUS
             LEFT JOIN NATUREZA N ON R.ID_NATUREZA = N.ID_NATUREZA
+            ORDER BY R.DATA_RECEBIMENTO DESC
         `);
         
         // Mapeamento para formato do frontend
@@ -27,7 +30,7 @@ export const getRumores = async (req: any, res: any) => {
             dataInicio: row.DATA_RECEBIMENTO,
             localEvento: row.LOCAL_EVENTO,
             veracidade: row.VERACIDADE,
-            // Adicione outros campos conforme necessidade
+            idNatureza: row.ID_NATUREZA
         }));
 
         res.json(mappedRumores);
@@ -39,7 +42,7 @@ export const getRumores = async (req: any, res: any) => {
 
 export const createRumor = async (req: any, res: any) => {
     const data = req.body;
-    const userId = (req as any).user.id; 
+    const user = req.user; // Do JWT
 
     try {
         const pool = await sql.connect();
@@ -63,7 +66,7 @@ export const createRumor = async (req: any, res: any) => {
         request.input('idNatureza', sql.Int, Number(data.idNatureza) || null);
         request.input('idIcmra', sql.Int, Number(data.idIcmra) || null);
         request.input('idStatus', sql.Int, 1); // 1 = Padrão (Ex: Em Monitoramento)
-        request.input('idUsuario', sql.Int, userId);
+        request.input('idUsuario', sql.Int, user.id);
         request.input('tipoVigilancia', sql.VarChar, data.tipoVigilancia);
         request.input('tipoEncaminhamento', sql.VarChar, data.tipoEncaminhamento);
 
@@ -81,7 +84,14 @@ export const createRumor = async (req: any, res: any) => {
             )
         `);
 
-        res.status(201).json({ id: result.recordset[0].ID_RUMOR_EVENTO, message: 'Rumor criado com sucesso' });
+        const newId = result.recordset[0].ID_RUMOR_EVENTO;
+
+        // --- AUDITORIA ---
+        await logAudit(
+            user.id, user.nome, 'INSERT', 'RUMOR_EVENTO', newId, null, data, req.ip
+        );
+
+        res.status(201).json({ id: newId, message: 'Rumor criado com sucesso' });
 
     } catch (error) {
         console.error(error);
@@ -89,11 +99,101 @@ export const createRumor = async (req: any, res: any) => {
     }
 };
 
+export const updateRumor = async (req: any, res: any) => {
+    const { id } = req.params;
+    const data = req.body;
+    const user = req.user;
+
+    try {
+        const pool = await sql.connect();
+
+        // 1. Buscar dados antigos para auditoria
+        const oldDataResult = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT * FROM RUMOR_EVENTO WHERE ID_RUMOR_EVENTO = @id');
+        
+        if (oldDataResult.recordset.length === 0) {
+            return res.status(404).json({ message: 'Registro não encontrado.' });
+        }
+        const oldData = oldDataResult.recordset[0];
+
+        // 2. Executar Update
+        const request = pool.request();
+        request.input('id', sql.Int, id);
+        // Mapear campos (simplificado para exemplo, idealmente seria dinâmico ou completo)
+        request.input('titulo', sql.VarChar, data.titulo || oldData.TITULO);
+        request.input('descricao', sql.VarChar, data.descricao || oldData.DESCRICAO);
+        request.input('veracidade', sql.VarChar, data.veracidade || oldData.VERACIDADE);
+        request.input('status', sql.VarChar, data.status); // Exemplo de campo de controle
+        
+        // Logica simplificada: Atualizando apenas alguns campos principais
+        await request.query(`
+            UPDATE RUMOR_EVENTO 
+            SET TITULO = @titulo, DESCRICAO = @descricao, VERACIDADE = @veracidade
+            WHERE ID_RUMOR_EVENTO = @id
+        `);
+
+        // 3. --- AUDITORIA ---
+        await logAudit(
+            user.id, user.nome, 'UPDATE', 'RUMOR_EVENTO', id, oldData, data, req.ip
+        );
+
+        res.json({ message: 'Atualizado com sucesso.' });
+
+    } catch (error: any) {
+        console.error(error);
+        // Log de tentativa falha (opcional)
+        await logAudit(user.id, user.nome, 'ERROR', 'RUMOR_EVENTO', id, null, { error: error.message }, req.ip);
+        res.status(500).json({ error: 'Erro ao atualizar rumor' });
+    }
+};
+
+export const deleteRumor = async (req: any, res: any) => {
+    const { id } = req.params;
+    const user = req.user;
+
+    try {
+        const pool = await sql.connect();
+
+        // 1. Buscar dados antigos antes de deletar
+        const oldDataResult = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT * FROM RUMOR_EVENTO WHERE ID_RUMOR_EVENTO = @id');
+
+        if (oldDataResult.recordset.length === 0) {
+             // Mesmo se falhar em achar, registra tentativa se quiser
+             await logAudit(user.id, user.nome, 'DELETE', 'RUMOR_EVENTO', id, null, { status: 'NOT_FOUND' }, req.ip);
+             return res.status(404).json({ message: 'Registro não encontrado.' });
+        }
+        const oldData = oldDataResult.recordset[0];
+
+        // 2. Deletar (ou inativar logicamente)
+        // Aqui faremos Delete físico conforme pedido, mas o log salva o histórico
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM RUMOR_EVENTO WHERE ID_RUMOR_EVENTO = @id');
+
+        // 3. --- AUDITORIA ---
+        await logAudit(
+            user.id, user.nome, 'DELETE', 'RUMOR_EVENTO', id, oldData, { status: 'DELETED' }, req.ip
+        );
+
+        res.json({ message: 'Excluído com sucesso.' });
+
+    } catch (error: any) {
+        console.error(error);
+        // Log de erro ao tentar excluir (restrição de FK, etc)
+        await logAudit(user.id, user.nome, 'ERROR', 'RUMOR_EVENTO', id, null, { action: 'DELETE_ATTEMPT', error: error.message }, req.ip);
+        res.status(500).json({ error: 'Erro ao excluir rumor. Pode haver registros vinculados.' });
+    }
+};
+
+
 // --- Comunicação de Risco ---
 
 export const createComunicacao = async (req: any, res: any) => {
     const data = req.body;
-    const userId = (req as any).user.id;
+    const user = req.user;
 
     try {
         const pool = await sql.connect();
@@ -112,7 +212,7 @@ export const createComunicacao = async (req: any, res: any) => {
         request.input('dataDou', sql.Date, data.dataDou || null);
         request.input('motivo', sql.VarChar, data.motivoAcao);
         request.input('emailNotificador', sql.VarChar, data.emailNotificador);
-        request.input('idUsuario', sql.Int, userId);
+        request.input('idUsuario', sql.Int, user.id);
 
         const result = await request.query(`
             INSERT INTO COMUNICACAO (
@@ -127,8 +227,15 @@ export const createComunicacao = async (req: any, res: any) => {
                 @idUsuario
             )
         `);
+        
+        const newId = result.recordset[0].ID_COMUNICACAO;
+        
+        // --- AUDITORIA ---
+        await logAudit(
+            user.id, user.nome, 'INSERT', 'COMUNICACAO', newId, null, data, req.ip
+        );
 
-        res.status(201).json({ id: result.recordset[0].ID_COMUNICACAO, message: 'Comunicação criada com sucesso' });
+        res.status(201).json({ id: newId, message: 'Comunicação criada com sucesso' });
 
     } catch (error) {
         console.error(error);

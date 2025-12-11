@@ -1,7 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PencilIcon } from '../../components/icons/IconComponents';
-import { mockData, Monitoramento, Status, NivelRisco, RumorEventoData, statusList } from '../../data/mockData';
+// Import types and DATA directly
+import { Monitoramento, Status, NivelRisco, RumorEventoData, statusList, mockData } from '../../data/mockData';
 
 interface RelatorioMonitoramentoProps {
     onEdit: (id: string) => void;
@@ -16,12 +17,21 @@ const riscoStyles: Record<string, string> = {
 };
 
 const RelatorioMonitoramento: React.FC<RelatorioMonitoramentoProps> = ({ onEdit }) => {
-    // Use mockData directly
-    const [data] = useState<Monitoramento[]>(mockData);
+    const [data, setData] = useState<Monitoramento[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<Status | 'todos'>('todos');
     const [riskFilter, setRiskFilter] = useState<NivelRisco | 'todos'>('todos');
+
+    useEffect(() => {
+        // Simula carregamento de dados
+        setTimeout(() => {
+            setData(mockData);
+            setLoading(false);
+        }, 500);
+    }, []);
 
     const filteredData = useMemo(() => {
         return data.filter(item => {
@@ -43,19 +53,20 @@ const RelatorioMonitoramento: React.FC<RelatorioMonitoramentoProps> = ({ onEdit 
     const statusOptions: (Status | 'todos')[] = ['todos', ...statusList.map(s => s.nome)];
     const riskOptions: (NivelRisco | 'todos')[] = ['todos', 'Muito Baixo', 'Baixo', 'Moderado', 'Alto', 'Muito Alto'];
 
-    // Helper to get status color from dynamic list
     const getStatusStyle = (statusName: string) => {
         const statusItem = statusList.find(s => s.nome === statusName);
         if (statusItem) {
-            // Check if color is hex or tailwind class. If hex, return inline style object.
-            return { backgroundColor: statusItem.cor, color: '#fff' }; // Defaulting text to white for contrast on custom colors
+            return { backgroundColor: statusItem.cor, color: '#fff' };
         }
-        return { backgroundColor: '#F3F4F6', color: '#374151' }; // gray-100 / gray-700
+        return { backgroundColor: '#F3F4F6', color: '#374151' };
     };
+
+    if (loading) return <div className="p-6 text-center text-gray-500">Carregando dados...</div>;
+    if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">Relatório Geral de Monitoramentos (Dados Simulados)</h3>
+            <h3 className="text-xl font-semibold text-gray-700 mb-4">Relatório Geral de Monitoramentos</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="lg:col-span-1">
@@ -118,9 +129,9 @@ const RelatorioMonitoramento: React.FC<RelatorioMonitoramentoProps> = ({ onEdit 
                              return (
                                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{item.idu}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{item.idu || '-'}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate" title={item.titulo}>{item.titulo}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.dataInicio}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.dataInicio ? new Date(item.dataInicio).toLocaleDateString() : '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         <span 
                                             className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm"

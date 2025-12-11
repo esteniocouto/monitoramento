@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -16,7 +17,7 @@
         .toc { background-color: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 40px; }
         .toc a { text-decoration: none; color: #2563EB; display: block; margin-bottom: 5px; }
         .toc a:hover { text-decoration: underline; }
-        .alert { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 20px; }
+        .alert { background-color: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; border: 1px solid #bee5eb; margin-bottom: 20px; }
         .meta-info { margin-bottom: 40px; background: #fff; border: 1px solid #ddd; padding: 20px; }
         .meta-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
         .meta-label { font-weight: bold; color: #555; }
@@ -32,107 +33,54 @@
 
     <div class="meta-info">
         <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
-        <div class="meta-row"><span class="meta-label">Arquitetura:</span> <span>Node.js (Frontend & Backend) + SQL Server</span></div>
+        <div class="meta-row"><span class="meta-label">Arquitetura:</span> <span>Frontend React (Dados Mockados)</span></div>
         <div class="meta-row"><span class="meta-label">Data de Atualização:</span> <span>19/11/2025</span></div>
+    </div>
+
+    <div class="alert">
+        <strong>Modo Demonstração:</strong> O sistema foi configurado para rodar independentemente de Banco de Dados ou API. Todos os dados são fictícios e armazenados na memória do navegador.
     </div>
 
     <div class="toc">
         <h3>Sumário</h3>
-        <a href="#prerequisitos">1. Pré-requisitos de Software</a>
-        <a href="#banco">2. Configuração do Banco de Dados</a>
-        <a href="#backend">3. Configuração do Backend (Node.js API)</a>
-        <a href="#frontend">4. Configuração do Frontend (React)</a>
-        <a href="#troubleshooting">5. Resolução de Problemas</a>
+        <a href="#prerequisitos">1. Pré-requisitos</a>
+        <a href="#execucao">2. Execução do Sistema</a>
+        <a href="#backend">3. Backend e Banco de Dados (Opcional)</a>
     </div>
 
-    <h2 id="prerequisitos">1. Pré-requisitos de Software</h2>
-    <p>Para executar o sistema localmente, certifique-se de que as seguintes ferramentas estão instaladas no seu ambiente.</p>
+    <h2 id="prerequisitos">1. Pré-requisitos</h2>
+    <p>Para executar a interface do sistema, você precisa apenas de:</p>
 
     <ul>
         <li>
-            <strong>Node.js (v18+):</strong> Necessário para rodar tanto o Frontend quanto o Backend.<br>
+            <strong>Node.js (v18+):</strong> Necessário para rodar o ambiente de desenvolvimento React.<br>
             <a href="https://nodejs.org/" target="_blank">Download Node.js</a>
-        </li>
-        <li>
-            <strong>SQL Server (2019+):</strong> O banco de dados da aplicação.<br>
-            <a href="https://www.microsoft.com/en-us/sql-server/sql-server-downloads" target="_blank">Download SQL Server Express</a>
         </li>
     </ul>
 
-    <h2 id="banco">2. Configuração do Banco de Dados</h2>
-    <p>Antes de rodar a aplicação, é necessário criar a estrutura do banco de dados.</p>
-
-    <ol>
-        <li>Abra o arquivo <code>documentos/Especificacao_Tecnica_Banco_Dados.html</code> neste projeto.</li>
-        <li>Copie o <strong>Script SQL Completo</strong> localizado na seção "2. Modelo Físico".</li>
-        <li>Abra o seu gerenciador de banco de dados (SSMS, DBeaver ou Azure Data Studio).</li>
-        <li>Execute o script para criar o banco <code>SIMRECEAVS</code> e suas tabelas.</li>
-        <li><strong>Importante:</strong> Crie um usuário administrador inicial (senha hash para '123456'):</li>
-    </ol>
+    <h2 id="execucao">2. Execução do Sistema</h2>
+    
+    <p>Abra um terminal na <strong>raiz do projeto</strong> e execute:</p>
 
 <pre>
-USE SIMRECEAVS;
-GO
-INSERT INTO LOGIN (NOME, EMAIL, LOGIN, SENHA, PERFIL, INATIVO)
-VALUES ('Administrador', 'admin@anvisa.gov.br', 'admin', '$2a$10$wS2a./L.0oU3.I6.rM6.u.j8.u.u.u.u.u.u.u.u.u.u.u', 'ADMIN', 0);
-GO
-</pre>
-
-    <h2 id="backend">3. Configuração do Backend (Node.js API)</h2>
-    <p>A API gerencia a conexão com o banco e a lógica de negócio.</p>
-
-    <h3>Passo 3.1: Configurar Variáveis de Ambiente</h3>
-    <p>Navegue até a pasta <code>backend</code> e crie um arquivo chamado <code>.env</code>:</p>
-<pre>
-# backend/.env
-DB_SERVER=localhost
-DB_NAME=SIMRECEAVS
-DB_USER=seu_usuario_sql
-DB_PASSWORD=sua_senha_sql
-JWT_SECRET=chave_secreta_para_token
-PORT=3001
-</pre>
-
-    <h3>Passo 3.2: Instalar Dependências e Rodar</h3>
-    <p>Abra o terminal na pasta <code>backend</code> e execute:</p>
-
-<pre>
-# 1. Instalar pacotes
+# 1. Instalar dependências (caso seja a primeira vez)
 npm install
 
-# 2. Iniciar o Servidor em modo desenvolvimento
-npm run dev
-</pre>
-
-    <div class="alert">
-        <strong>Sucesso:</strong> Se tudo der certo, você verá a mensagem: <code>✅ Servidor Node.js rodando na porta 3001</code>.
-    </div>
-
-    <h2 id="frontend">4. Configuração do Frontend (React)</h2>
-    <p>A interface do sistema onde o usuário interage.</p>
-
-    <p>Abra um <strong>novo terminal</strong> na raiz do projeto (fora da pasta backend) e execute:</p>
-
-<pre>
-# 1. Instalar pacotes do Node
-npm install
-
-# 2. Rodar o projeto
+# 2. Iniciar o Frontend
 npm run dev
 </pre>
 
     <p>O sistema estará acessível em: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>.</p>
+    
+    <h3>Credenciais de Acesso (Mock)</h3>
+    <ul>
+        <li><strong>Admin:</strong> Use qualquer email contendo a palavra "admin" (ex: <code>admin@anvisa.gov.br</code>) e qualquer senha.</li>
+        <li><strong>Usuário Comum:</strong> Use qualquer outro email e senha.</li>
+    </ul>
 
-    <h2 id="troubleshooting">5. Resolução de Problemas</h2>
+    <h2 id="backend">3. Backend e Banco de Dados (Opcional)</h2>
+    <p>Os arquivos do Backend (Node.js/Express) e scripts do SQL Server ainda existem na pasta <code>backend/</code> e <code>doc_banco/</code>, mas <strong>não são necessários</strong> para rodar a versão atual da interface.</p>
+    <p>Caso deseje reativar a conexão real no futuro, será necessário reconfigurar os apontamentos de API no código do Frontend.</p>
 
-    <h3>Erro: <code>ESOCKET</code> ou Falha de Conexão no Banco</h3>
-    <p>Isso geralmente ocorre porque o protocolo TCP/IP está desativado no SQL Server.</p>
-    <ol>
-        <li>Abra o <em>SQL Server Configuration Manager</em>.</li>
-        <li>Vá em <em>SQL Server Network Configuration</em> > <em>Protocols</em>.</li>
-        <li>Habilite o <strong>TCP/IP</strong>.</li>
-        <li>Nas propriedades de TCP/IP, aba "IP Addresses", certifique-se que a porta é <strong>1433</strong>.</li>
-        <li>Reinicie o serviço do SQL Server.</li>
-    </ol>
 </body>
 </html>

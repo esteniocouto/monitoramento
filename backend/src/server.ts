@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -15,8 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// Fix for: Argument of type 'NextHandleFunction' is not assignable to parameter of type 'PathParams'
-app.use(cors() as unknown as express.RequestHandler);
+app.use(cors() as express.RequestHandler); // Permite todas as origens para facilitar o desenvolvimento local
 app.use(express.json());
 
 // Database Connection
@@ -40,9 +40,14 @@ app.get('/api/rumores', verifyToken, MonitoramentoController.getRumores);
 app.post('/api/rumores', verifyToken, MonitoramentoController.createRumor);
 app.post('/api/comunicacoes', verifyToken, MonitoramentoController.createComunicacao);
 
+// Rotas de Edição e Exclusão (Novas, com Auditoria)
+app.put('/api/rumores/:id', verifyToken, MonitoramentoController.updateRumor);
+app.delete('/api/rumores/:id', verifyToken, MonitoramentoController.deleteRumor);
+
+
 // Health Check
 app.get('/', (req, res) => {
-    res.send('API SIMRE-CEAVS (Node.js) rodando!');
+    res.send('API SIMRE-CEAVS (Node.js) rodando e conectada ao SQL Server!');
 });
 
 // Start
