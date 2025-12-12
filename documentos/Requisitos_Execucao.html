@@ -18,6 +18,7 @@
         .toc a { text-decoration: none; color: #2563EB; display: block; margin-bottom: 5px; }
         .toc a:hover { text-decoration: underline; }
         .alert { background-color: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; border: 1px solid #bee5eb; margin-bottom: 20px; }
+        .success { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 5px; border: 1px solid #c3e6cb; margin-bottom: 20px; }
         .meta-info { margin-bottom: 40px; background: #fff; border: 1px solid #ddd; padding: 20px; }
         .meta-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
         .meta-label { font-weight: bold; color: #555; }
@@ -33,54 +34,63 @@
 
     <div class="meta-info">
         <div class="meta-row"><span class="meta-label">Projeto:</span> <span>SIMRE-CEAVS</span></div>
-        <div class="meta-row"><span class="meta-label">Arquitetura:</span> <span>Frontend React (Dados Mockados)</span></div>
+        <div class="meta-row"><span class="meta-label">Arquitetura:</span> <span>Full Stack (React + Node.js)</span></div>
         <div class="meta-row"><span class="meta-label">Data de Atualização:</span> <span>19/11/2025</span></div>
-    </div>
-
-    <div class="alert">
-        <strong>Modo Demonstração:</strong> O sistema foi configurado para rodar independentemente de Banco de Dados ou API. Todos os dados são fictícios e armazenados na memória do navegador.
     </div>
 
     <div class="toc">
         <h3>Sumário</h3>
         <a href="#prerequisitos">1. Pré-requisitos</a>
-        <a href="#execucao">2. Execução do Sistema</a>
-        <a href="#backend">3. Backend e Banco de Dados (Opcional)</a>
+        <a href="#execucao-automatica">2. Execução Automática (Recomendado)</a>
+        <a href="#execucao-manual">3. Execução Manual</a>
     </div>
 
     <h2 id="prerequisitos">1. Pré-requisitos</h2>
-    <p>Para executar a interface do sistema, você precisa apenas de:</p>
-
     <ul>
         <li>
-            <strong>Node.js (v18+):</strong> Necessário para rodar o ambiente de desenvolvimento React.<br>
+            <strong>Node.js (v18+):</strong> Necessário para rodar o sistema.<br>
             <a href="https://nodejs.org/" target="_blank">Download Node.js</a>
         </li>
     </ul>
 
-    <h2 id="execucao">2. Execução do Sistema</h2>
+    <h2 id="execucao-automatica">2. Execução Automática (Windows)</h2>
     
-    <p>Abra um terminal na <strong>raiz do projeto</strong> e execute:</p>
+    <div class="success">
+        <strong>Novo!</strong> Agora você pode iniciar todo o sistema com apenas um clique.
+    </div>
 
+    <ol>
+        <li>Navegue até a pasta raiz do projeto.</li>
+        <li>Localize o arquivo <code>iniciar_sistema.bat</code>.</li>
+        <li>Dê um duplo clique no arquivo.</li>
+    </ol>
+
+    <p><strong>O que o script fará:</strong></p>
+    <ul>
+        <li>Abrirá uma janela de terminal para o <strong>Backend</strong> (instala dependências e inicia a porta 3001).</li>
+        <li>Abrirá uma janela de terminal para o <strong>Frontend</strong> (instala dependências e inicia a porta 5173).</li>
+        <li>Aguardará 8 segundos para o carregamento.</li>
+        <li>Abrirá automaticamente o seu navegador padrão no endereço do sistema.</li>
+    </ul>
+
+    <h2 id="execucao-manual">3. Execução Manual</h2>
+    <p>Caso prefira ou esteja em Linux/Mac, execute os comandos abaixo em dois terminais separados:</p>
+
+    <h3>Terminal 1 (Backend)</h3>
 <pre>
-# 1. Instalar dependências (caso seja a primeira vez)
+cd backend
 npm install
-
-# 2. Iniciar o Frontend
 npm run dev
 </pre>
 
-    <p>O sistema estará acessível em: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>.</p>
-    
-    <h3>Credenciais de Acesso (Mock)</h3>
-    <ul>
-        <li><strong>Admin:</strong> Use qualquer email contendo a palavra "admin" (ex: <code>admin@anvisa.gov.br</code>) e qualquer senha.</li>
-        <li><strong>Usuário Comum:</strong> Use qualquer outro email e senha.</li>
-    </ul>
+    <h3>Terminal 2 (Frontend)</h3>
+<pre>
+# Na raiz do projeto
+npm install
+npm run dev
+</pre>
 
-    <h2 id="backend">3. Backend e Banco de Dados (Opcional)</h2>
-    <p>Os arquivos do Backend (Node.js/Express) e scripts do SQL Server ainda existem na pasta <code>backend/</code> e <code>doc_banco/</code>, mas <strong>não são necessários</strong> para rodar a versão atual da interface.</p>
-    <p>Caso deseje reativar a conexão real no futuro, será necessário reconfigurar os apontamentos de API no código do Frontend.</p>
+    <p>Em seguida, abra o navegador em: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>.</p>
 
 </body>
 </html>
