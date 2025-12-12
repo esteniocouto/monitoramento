@@ -1,0 +1,38 @@
+@echo off
+SETLOCAL
+TITLE SIMRE-CEAVS Launcher
+
+echo ========================================================
+echo      INICIADOR AUTOMATICO - SIMRE-CEAVS
+echo ========================================================
+echo.
+
+:: 1. BACKEND
+IF EXIST "backend" (
+    echo [1/3] Verificando Backend...
+    :: Entra na pasta, verifica node_modules, instala se precisar, e roda dev
+    start "BACKEND - SIMRE-CEAVS" cmd /k "cd backend && (IF NOT EXIST node_modules call npm install) && npm run dev"
+) ELSE (
+    echo [INFO] Pasta 'backend' nao encontrada. Rodando em modo Frontend-Only.
+)
+
+:: 2. FRONTEND
+echo [2/3] Verificando Frontend...
+:: Verifica node_modules na raiz, instala se precisar, e roda dev
+start "FRONTEND - SIMRE-CEAVS" cmd /k "(IF NOT EXIST node_modules call npm install) && npm run dev"
+
+:: 3. NAVEGADOR
+echo [3/3] Aguardando inicializacao dos servicos (10 segundos)...
+timeout /t 10 /nobreak >nul
+
+echo.
+echo Abrindo navegador padrao em http://localhost:5173...
+start http://localhost:5173
+
+echo.
+echo ========================================================
+echo   SISTEMA INICIADO!
+echo   IMPORTANTE: Nao feche as janelas pretas (terminais).
+echo   Elas sao os servidores rodando.
+echo ========================================================
+pause
